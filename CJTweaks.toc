@@ -1,0 +1,13 @@
+## Author: 100207
+## Interface: 100205
+## Notes: Customize AtrocityUI for Cracked Jar. Based on ZoxeTweaks.
+## Title: CrackedJarTweaks
+## Version: 100207
+## DefaultState: enabled
+## OptionalDeps: AddOnSkins, Auctionator, BigWigs, Details, ElvUI, MRT, OmniCD, Plater, WarpDeplete, WeakAuras
+## SavedVariables: CrackedJarTweaksDB
+
+embeds.xml
+Core.lua
+Atrocity.lua
+ElvUI.lua
