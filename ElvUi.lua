@@ -18,12 +18,12 @@ local function ConfigurePrimaryActionBars(elv, elvColor, elvHealer, elvHealerCol
     elvColor["actionbar"]["bar1"]["heightMult"] = 3
     elvHealer["actionbar"]["bar1"]["heightMult"] = 3
     elvHealerColor["actionbar"]["bar1"]["heightMult"] = 3
-    
+
     elv["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,67"
     elvColor["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,67"
     -- elvHealer["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,34"
     -- elvHealerColor["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,34"
-    
+
     elv["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,0,36"
     elvColor["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,0,36"
     -- elvHealer["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,0,34"
@@ -50,17 +50,17 @@ local function ConfigureLeftActionBars(elv, elvColor, elvHealer, elvHealerColor)
     elvColor["actionbar"]["bar3"]["mouseover"] = false
     elvHealer["actionbar"]["bar3"]["mouseover"] = false
     elvHealerColor["actionbar"]["bar3"]["mouseover"] = false
-    
+
     elv["actionbar"]["bar3"]["buttons"] = 12
     elvColor["actionbar"]["bar3"]["buttons"] = 12
     elvHealer["actionbar"]["bar3"]["buttons"] = 12
     elvHealerColor["actionbar"]["bar3"]["buttons"] = 12
-    
+
     elv["actionbar"]["bar3"]["buttonSpacing"] = 1
     elvColor["actionbar"]["bar3"]["buttonSpacing"] = 1
     elvHealer["actionbar"]["bar3"]["buttonSpacing"] = 1
     elvHealerColor["actionbar"]["bar3"]["buttonSpacing"] = 1
-    
+
     elv["actionbar"]["bar3"]["buttonSize"] = 40
     elvColor["actionbar"]["bar3"]["buttonSize"] = 40
     elvHealer["actionbar"]["bar3"]["buttonSize"] = 40
@@ -73,8 +73,8 @@ local function ConfigureLeftActionBars(elv, elvColor, elvHealer, elvHealerColor)
 
     elv["movers"]["ElvAB_4"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,538,5"
     elvColor["movers"]["ElvAB_4"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,538,5"
-    elvHealer["movers"]["ElvAB_4"] =  "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,538,5"
-    elvHealerColor["movers"]["ElvAB_4"] =  "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,538,5"
+    elvHealer["movers"]["ElvAB_4"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,538,5"
+    elvHealerColor["movers"]["ElvAB_4"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,538,5"
 
     elv["actionbar"]["bar4"]["buttonSize"] = 40
     elvColor["actionbar"]["bar4"]["buttonSize"] = 40
@@ -91,10 +91,18 @@ local function ConfigureLeftActionBars(elv, elvColor, elvHealer, elvHealerColor)
     elvHealer["actionbar"]["bar4"]["backdrop"] = false
     elvHealerColor["actionbar"]["bar4"]["backdrop"] = false
 
-    elv["actionbar"]["bar4"]["professionQuality"]["enable"] = true
-    elvColor["actionbar"]["bar4"]["professionQuality"]["enable"] = true
-    elvHealer["actionbar"]["bar4"]["professionQuality"]["enable"] = true
-    elvHealerColor["actionbar"]["bar4"]["professionQuality"]["enable"] = true
+    if (elv["actionbar"]["bar4"]["professionQuality"] ~= nil) then
+        elv["actionbar"]["bar4"]["professionQuality"]["enable"] = true
+    end
+    if (elvColor["actionbar"]["bar4"]["professionQuality"] ~= nil) then
+        elvColor["actionbar"]["bar4"]["professionQuality"]["enable"] = true
+    end
+    if (elvHealer["actionbar"]["bar4"]["professionQuality"] ~= nil) then
+        elvHealer["actionbar"]["bar4"]["professionQuality"]["enable"] = true
+    end
+    if (elvHealerColor["actionbar"]["bar4"]["professionQuality"] ~= nil) then
+        elvHealerColor["actionbar"]["bar4"]["professionQuality"]["enable"] = true
+    end
 end
 
 local function ConfigurePetBars(elv, elvColor, elvHealer, elvHealerColor)
@@ -102,17 +110,17 @@ local function ConfigurePetBars(elv, elvColor, elvHealer, elvHealerColor)
     elvColor["actionbar"]["barPet"]["mouseover"] = false
     elvHealer["actionbar"]["barPet"]["mouseover"] = false
     elvHealerColor["actionbar"]["barPet"]["mouseover"] = false
-    
+
     elv["actionbar"]["barPet"]["buttons"] = 12
     elvColor["actionbar"]["barPet"]["buttons"] = 12
     elvHealer["actionbar"]["barPet"]["buttons"] = 12
     elvHealerColor["actionbar"]["barPet"]["buttons"] = 12
-    
+
     elv["actionbar"]["barPet"]["buttonSpacing"] = 1
     elvColor["actionbar"]["barPet"]["buttonSpacing"] = 1
     elvHealer["actionbar"]["barPet"]["buttonSpacing"] = 1
     elvHealerColor["actionbar"]["barPet"]["buttonSpacing"] = 1
-    
+
     elv["actionbar"]["barPet"]["buttonSize"] = 40
     elvColor["actionbar"]["barPet"]["buttonSize"] = 40
     elvHealer["actionbar"]["barPet"]["buttonSize"] = 40
@@ -150,17 +158,20 @@ local function ConfigureRaidFrames(elv, elvColor, elvHealer, elvHealerColor)
     elv["unitframe"]["units"]["raid1"]["roleIcon"] = elv["unitframe"]["units"]["raid1"]["roleIcon"] or {}
     elvColor["unitframe"]["units"]["raid1"]["roleIcon"] = elvColor["unitframe"]["units"]["raid1"]["roleIcon"] or {}
     elvHealer["unitframe"]["units"]["raid1"]["roleIcon"] = elvHealer["unitframe"]["units"]["raid1"]["roleIcon"] or {}
-    elvHealerColor["unitframe"]["units"]["raid1"]["roleIcon"] = elvHealerColor["unitframe"]["units"]["raid1"]["roleIcon"] or {}
+    elvHealerColor["unitframe"]["units"]["raid1"]["roleIcon"] = elvHealerColor["unitframe"]["units"]["raid1"]
+    ["roleIcon"] or {}
 
     elv["unitframe"]["units"]["raid2"]["roleIcon"] = elv["unitframe"]["units"]["raid2"]["roleIcon"] or {}
     elvColor["unitframe"]["units"]["raid2"]["roleIcon"] = elvColor["unitframe"]["units"]["raid2"]["roleIcon"] or {}
     elvHealer["unitframe"]["units"]["raid2"]["roleIcon"] = elvHealer["unitframe"]["units"]["raid2"]["roleIcon"] or {}
-    elvHealerColor["unitframe"]["units"]["raid2"]["roleIcon"] = elvHealerColor["unitframe"]["units"]["raid2"]["roleIcon"] or {}
+    elvHealerColor["unitframe"]["units"]["raid2"]["roleIcon"] = elvHealerColor["unitframe"]["units"]["raid2"]
+    ["roleIcon"] or {}
 
     elv["unitframe"]["units"]["raid3"]["roleIcon"] = elv["unitframe"]["units"]["raid3"]["roleIcon"] or {}
     elvColor["unitframe"]["units"]["raid3"]["roleIcon"] = elvColor["unitframe"]["units"]["raid3"]["roleIcon"] or {}
     elvHealer["unitframe"]["units"]["raid3"]["roleIcon"] = elvHealer["unitframe"]["units"]["raid3"]["roleIcon"] or {}
-    elvHealerColor["unitframe"]["units"]["raid3"]["roleIcon"] = elvHealerColor["unitframe"]["units"]["raid3"]["roleIcon"] or {}
+    elvHealerColor["unitframe"]["units"]["raid3"]["roleIcon"] = elvHealerColor["unitframe"]["units"]["raid3"]
+    ["roleIcon"] or {}
 
     elv["unitframe"]["units"]["raid1"]["roleIcon"]["enable"] = true
     elv["unitframe"]["units"]["raid1"]["roleIcon"]["damager"] = false
@@ -205,6 +216,13 @@ local function ConfigureUnitFrames(elv, elvColor, elvHealer, elvHealerColor)
     elvColor["movers"]["ElvUF_PartyMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,965,535"
 end
 
+local function ConfigureMiscMovers(elv, elvColor, elvHealer, elvHealerColor)
+    elv["movers"]["AltPowerBarMover"] = "BOTTOM,ElvUIParent,BOTTOM,0,101"
+    elvColor["movers"]["AltPowerBarMover"] = "BOTTOM,ElvUIParent,BOTTOM,0,101"
+    elvHealer["movers"]["AltPowerBarMover"] = "BOTTOM,ElvUIParent,BOTTOM,0,101"
+    elvHealerColor["movers"]["AltPowerBarMover"] = "BOTTOM,ElvUIParent,BOTTOM,0,101"
+end
+
 function CJ:ApplyElvUITweaks(opts)
     local E = select(1, unpack(ElvUI))
 
@@ -220,7 +238,7 @@ function CJ:ApplyElvUITweaks(opts)
 
     -- TODO
     -- GM Ticket Frame ElvUi Frame (move right a few pixels out of action bar 4)
-    
+
     DisableBags(elvPriv, elvPrivColor, elvPrivHealer, elvPrivHealerColor)
     ConfigurePrimaryActionBars(elv, elvColor, elvHealer, elvHealerColor)
     ConfigureLeftActionBars(elv, elvColor, elvHealer, elvHealerColor)
@@ -228,4 +246,5 @@ function CJ:ApplyElvUITweaks(opts)
     ConfigurePanels(elv, elvColor, elvHealer, elvHealerColor)
     ConfigureRaidFrames(elv, elvColor, elvHealer, elvHealerColor)
     ConfigureUnitFrames(elv, elvColor, elvHealer, elvHealerColor)
+    ConfigureMiscMovers(elv, elvColor, elvHealer, elvHealerColor)
 end
