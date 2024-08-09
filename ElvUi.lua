@@ -19,13 +19,13 @@ local function ConfigurePrimaryActionBars(elv, elvColor, elvHealer, elvHealerCol
     elvHealer["actionbar"]["bar1"]["heightMult"] = 3
     elvHealerColor["actionbar"]["bar1"]["heightMult"] = 3
 
-    elv["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,67"
-    elvColor["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,67"
+    elv["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,68"
+    elvColor["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,68"
     -- elvHealer["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,34"
     -- elvHealerColor["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,34"
 
-    elv["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,0,36"
-    elvColor["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,0,36"
+    elv["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,0,37"
+    elvColor["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,0,37"
     -- elvHealer["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,0,34"
     -- elvHealerColor["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,0,34"
 
@@ -71,10 +71,10 @@ local function ConfigureLeftActionBars(elv, elvColor, elvHealer, elvHealerColor)
     elvHealer["actionbar"]["bar3"]["widthMult"] = 2
     elvHealerColor["actionbar"]["bar3"]["widthMult"] = 2
 
-    elv["movers"]["ElvAB_4"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,538,5"
-    elvColor["movers"]["ElvAB_4"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,538,5"
-    elvHealer["movers"]["ElvAB_4"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,538,5"
-    elvHealerColor["movers"]["ElvAB_4"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,538,5"
+    elv["movers"]["ElvAB_4"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,489,5"
+    elvColor["movers"]["ElvAB_4"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,489,5"
+    elvHealer["movers"]["ElvAB_4"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,489,5"
+    elvHealerColor["movers"]["ElvAB_4"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,489,5"
 
     elv["actionbar"]["bar4"]["buttonSize"] = 40
     elvColor["actionbar"]["bar4"]["buttonSize"] = 40
