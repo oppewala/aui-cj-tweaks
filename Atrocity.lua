@@ -35,12 +35,12 @@ local function ApplyDetailsTweaks(opts)
 
         -- Healing window
         if id == 2 then
-            position.h = 132
+            position.h = 155 --132
         end
 
         -- Deaths window
         if id == 3 then
-            position.h = 76
+            position.h = 52 --76
         end
 
         instance:RestorePositionFromPositionTable(position)
