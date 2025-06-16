@@ -21,18 +21,18 @@ local function ConfigurePrimaryActionBars(elv, elvColor, elvHealer, elvHealerCol
 
     elv["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,68"
     elvColor["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,68"
-    -- elvHealer["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,34"
-    -- elvHealerColor["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,34"
+    elvHealer["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,1,64"
+    elvHealerColor["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,1,64"
 
     elv["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,0,37"
-    elvColor["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,0,37"
-    -- elvHealer["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,0,34"
-    -- elvHealerColor["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,0,34"
+    elvColor["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,1,37"
+    elvHealer["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,1,34"
+    elvHealerColor["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,1,34"
 
     elv["actionbar"]["bar6"]["buttonSize"] = 30
     elvColor["actionbar"]["bar6"]["buttonSize"] = 30
-    -- elvHealer["actionbar"]["bar6"]["buttonSize"] = 28
-    -- elvHealerColor["actionbar"]["bar6"]["buttonSize"] = 28
+    elvHealer["actionbar"]["bar6"]["buttonSize"] = 28
+    elvHealerColor["actionbar"]["bar6"]["buttonSize"] = 28
 
     elv["actionbar"]["bar6"]["buttonsPerRow"] = 12
     elvColor["actionbar"]["bar6"]["buttonsPerRow"] = 12
