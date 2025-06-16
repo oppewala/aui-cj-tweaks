@@ -3,23 +3,34 @@ local CJ = LibStub("AceAddon-3.0"):GetAddon("CrackedJarTweaks")
 
 local function ApplyWeakAurasTweaks(opts)
     WeakAurasSaved["displays"]["Missing Buffs"]["xOffset"] = -1716 -- -1276
-    WeakAurasSaved["displays"]["Combat Ress"]["xOffset"] = -1658 -- -1218
-    WeakAurasSaved["displays"]["Combat Time"]["xOffset"] = -1315 -- -877
 
-    WeakAurasSaved["displays"]["Combat Ress"]["yOffset"] = -455 -- -466
+    if (WeakAurasSaved["displays"]["Combat Ress"] ~= nil) then
+        WeakAurasSaved["displays"]["Combat Ress"]["xOffset"] = -1658 -- -1218
+        WeakAurasSaved["displays"]["Combat Ress"]["yOffset"] = -455 -- -466
+    end
+
+    WeakAurasSaved["displays"]["Combat Time"]["xOffset"] = -1315 -- -877
     WeakAurasSaved["displays"]["Combat Time"]["yOffset"] = -455 -- -466
 end
 
 local function ApplyOmniCDTweaks(opts)
-    local profile = OmniCDDB["profiles"][opts.profiles.atrocityUI]
-    profile["Party"]["party"]["extraBars"]["raidBar1"]["manualPos"]["raidBar1"]["x"] = 514.9332700888335
-    profile["Party"]["party"]["extraBars"]["raidBar1"]["manualPos"]["raidBar1"]["y"] = 434.4000392119051
+    if (OmniCDDB == nil) then
+        return
+    end
 
-    profile["Party"]["party"]["extraBars"]["raidBar2"]["manualPos"]["raidBar2"]["x"] = 514.9332700888335
-    profile["Party"]["party"]["extraBars"]["raidBar2"]["manualPos"]["raidBar2"]["y"] = 311.7332822004973
+    local profile = OmniCDDB["profiles"][opts.profiles.atrocityUI]
+    if (profile ~= nil) then
+        profile["Party"]["party"]["extraBars"]["raidBar1"]["manualPos"]["raidBar1"]["x"] = 514.9332700888335
+        profile["Party"]["party"]["extraBars"]["raidBar1"]["manualPos"]["raidBar1"]["y"] = 434.4000392119051
+
+        profile["Party"]["party"]["extraBars"]["raidBar2"]["manualPos"]["raidBar2"]["x"] = 514.9332700888335
+        profile["Party"]["party"]["extraBars"]["raidBar2"]["manualPos"]["raidBar2"]["y"] = 311.7332822004973
+    end
 
     local healerProfile = OmniCDDB["profiles"][opts.profiles.atrocityUIHealer]
-    healerProfile["Party"]["party"]["extraBars"]["raidBar1"]["manualPos"]["raidBar1"]["x"] = 1065.866798448551
+    if (healerProfile ~= nil) then
+        healerProfile["Party"]["party"]["extraBars"]["raidBar1"]["manualPos"]["raidBar1"]["x"] = 1065.866798448551
+    end
 end
 
 local function ApplyDetailsTweaks(opts)
