@@ -9,8 +9,8 @@ local function ApplyWeakAurasTweaks(opts)
         WeakAurasSaved["displays"]["Combat Ress"]["yOffset"] = -455 -- -466
     end
 
-    WeakAurasSaved["displays"]["Combat Time"]["xOffset"] = -1315 -- -877
-    WeakAurasSaved["displays"]["Combat Time"]["yOffset"] = -455 -- -466
+    WeakAurasSaved["displays"]["Combat Timer"]["xOffset"] = -1315 -- -877
+    WeakAurasSaved["displays"]["Combat Timer"]["yOffset"] = -455 -- -466
 end
 
 local function ApplyOmniCDTweaks(opts)
