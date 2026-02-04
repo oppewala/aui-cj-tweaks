@@ -1,10 +1,10 @@
 ## Author: CrackedJar
-## Interface: 110000, 110002, 40400
+## Interface: 120000, 120001, 120002
 ## Notes: Customize AtrocityUI for Cracked Jar. Based on ZoxeTweaks.
 ## Title: CrackedJarTweaks
-## Version: 1.0.0
+## Version: 2.0.0
 ## DefaultState: enabled
-## OptionalDeps: AddOnSkins, Auctionator, BigWigs, Details, ElvUI, MRT, OmniCD, Plater, WarpDeplete, WeakAuras
+## OptionalDeps: atrocityUI, atrocityMedia, Details, ElvUI, BetterCooldownManager
 ## SavedVariables: CrackedJarTweaksDB
 
 embeds.xml

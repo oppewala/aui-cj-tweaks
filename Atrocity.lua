@@ -1,39 +1,45 @@
 ---@class CrackedJarTweaks
 local CJ = LibStub("AceAddon-3.0"):GetAddon("CrackedJarTweaks")
 
-local function ApplyWeakAurasTweaks(opts)
-    WeakAurasSaved["displays"]["Missing Buffs"]["xOffset"] = -1716 -- -1276
+-- TODO: 
+-- local function ApplyWeakAurasTweaks(opts)
+--     WeakAurasSaved["displays"]["Missing Buffs"]["xOffset"] = -1716 -- -1276
 
-    if (WeakAurasSaved["displays"]["Combat Ress"] ~= nil) then
-        WeakAurasSaved["displays"]["Combat Ress"]["xOffset"] = -1658 -- -1218
-        WeakAurasSaved["displays"]["Combat Ress"]["yOffset"] = -455 -- -466
-    end
+--     if (WeakAurasSaved["displays"]["Combat Ress"] ~= nil) then
+--         WeakAurasSaved["displays"]["Combat Ress"]["xOffset"] = -1658 -- -1218
+--         WeakAurasSaved["displays"]["Combat Ress"]["yOffset"] = -455 -- -466
+--     end
 
-    WeakAurasSaved["displays"]["Combat Timer"]["xOffset"] = -1315 -- -877
-    WeakAurasSaved["displays"]["Combat Timer"]["yOffset"] = -455 -- -466
-end
+--     WeakAurasSaved["displays"]["Combat Timer"]["xOffset"] = -1315 -- -877
+--     WeakAurasSaved["displays"]["Combat Timer"]["yOffset"] = -455 -- -466
+-- end
 
-local function ApplyOmniCDTweaks(opts)
-    if (OmniCDDB == nil) then
+-- local function ApplyOmniCDTweaks(opts)
+--     if (OmniCDDB == nil) then
+--         return
+--     end
+
+--     local profile = OmniCDDB["profiles"][opts.profiles.atrocityUI]
+--     if (profile ~= nil) then
+--         profile["Party"]["party"]["extraBars"]["raidBar1"]["manualPos"]["raidBar1"]["x"] = 514.9332700888335
+--         profile["Party"]["party"]["extraBars"]["raidBar1"]["manualPos"]["raidBar1"]["y"] = 434.4000392119051
+
+--         profile["Party"]["party"]["extraBars"]["raidBar2"]["manualPos"]["raidBar2"]["x"] = 514.9332700888335
+--         profile["Party"]["party"]["extraBars"]["raidBar2"]["manualPos"]["raidBar2"]["y"] = 311.7332822004973
+--     end
+
+--     local healerProfile = OmniCDDB["profiles"][opts.profiles.atrocityUIHealer]
+--     if (healerProfile ~= nil) then
+--         healerProfile["Party"]["party"]["extraBars"]["raidBar1"]["manualPos"]["raidBar1"]["x"] = 1065.866798448551
+--     end
+-- end
+
+function CJ:ApplyDetailsTweaks(opts)
+    if not opts.elvUi.panels then
         return
     end
 
-    local profile = OmniCDDB["profiles"][opts.profiles.atrocityUI]
-    if (profile ~= nil) then
-        profile["Party"]["party"]["extraBars"]["raidBar1"]["manualPos"]["raidBar1"]["x"] = 514.9332700888335
-        profile["Party"]["party"]["extraBars"]["raidBar1"]["manualPos"]["raidBar1"]["y"] = 434.4000392119051
-
-        profile["Party"]["party"]["extraBars"]["raidBar2"]["manualPos"]["raidBar2"]["x"] = 514.9332700888335
-        profile["Party"]["party"]["extraBars"]["raidBar2"]["manualPos"]["raidBar2"]["y"] = 311.7332822004973
-    end
-
-    local healerProfile = OmniCDDB["profiles"][opts.profiles.atrocityUIHealer]
-    if (healerProfile ~= nil) then
-        healerProfile["Party"]["party"]["extraBars"]["raidBar1"]["manualPos"]["raidBar1"]["x"] = 1065.866798448551
-    end
-end
-
-local function ApplyDetailsTweaks(opts)
+    -- DEFAULT_CHAT_FRAME:AddMessage( ( GetScreenWidth() * UIParent:GetEffectiveScale() ).."x"..( GetScreenHeight() * UIParent:GetEffectiveScale() ) )
     for id, instance in Details:ListInstances() do
         instance.row_info.height = 24
 
@@ -67,17 +73,5 @@ local function ApplyDetailsTweaks(opts)
 
     Details:SaveProfile()
     Details:ApplyProfile(opts.profiles.atrocityUI, false)
-end
-
-function CJ:ApplyAtrocityTweaks()
-    local opts = self.db.global
-
-    CJ:ApplyElvUITweaks(opts)
-
-    ApplyWeakAurasTweaks(opts)
-    ApplyOmniCDTweaks(opts)
-    ApplyDetailsTweaks(opts)
-
-    ReloadUI()
 end
 

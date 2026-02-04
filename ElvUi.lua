@@ -26,8 +26,11 @@ end
 local function ConfigurePrimaryActionBars(elv, elvColor, elvHealer, elvHealerColor)
     if (elv ~= nil) then
         elv["actionbar"]["bar1"]["heightMult"] = 3
+        elv["actionbar"]["bar1"]["visibility"] = ""
+        elv["actionbar"]["bar5"]["visibility"] = ""
+        elv["actionbar"]["bar6"]["visibility"] = ""
         elv["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,68"
-        elv["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,0,37"
+        elv["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,1,37"
         elv["actionbar"]["bar6"]["buttonSize"] = 30
         elv["actionbar"]["bar6"]["buttonsPerRow"] = 12
         elv["actionbar"]["bar6"]["backdrop"] = false
@@ -35,6 +38,9 @@ local function ConfigurePrimaryActionBars(elv, elvColor, elvHealer, elvHealerCol
 
     if (elvColor ~= nil) then
         elvColor["actionbar"]["bar1"]["heightMult"] = 3
+        elvColor["actionbar"]["bar1"]["visibility"] = ""
+        elvColor["actionbar"]["bar5"]["visibility"] = ""
+        elvColor["actionbar"]["bar6"]["visibility"] = ""
         elvColor["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,68"
         elvColor["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,1,37"
         elvColor["actionbar"]["bar6"]["buttonSize"] = 30
@@ -43,19 +49,25 @@ local function ConfigurePrimaryActionBars(elv, elvColor, elvHealer, elvHealerCol
     end
 
     if (elvHealer ~= nil) then
-        elvHealer["actionbar"]["bar1"]["heightMult"] = 3
-        elvHealer["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,1,64"
-        elvHealer["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,1,34"
-        elvHealer["actionbar"]["bar6"]["buttonSize"] = 28
+        elvHealer["actionbar"]["bar1"]["visibility"] = ""
+        elvHealer["actionbar"]["bar5"]["visibility"] = ""
+        elvHealer["actionbar"]["bar6"]["visibility"] = ""
+        elvHealer["actionbar"]["bar5"]["heightMult"] = 3
+        elvHealer["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,68"
+        elvHealer["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,1,37"
+        elvHealer["actionbar"]["bar6"]["buttonSize"] = 30
         elvHealer["actionbar"]["bar6"]["buttonsPerRow"] = 12
         elvHealer["actionbar"]["bar6"]["backdrop"] = false
     end
 
     if (elvHealerColor ~= nil) then
         elvHealerColor["actionbar"]["bar1"]["heightMult"] = 3
-        elvHealerColor["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,1,64"
-        elvHealerColor["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,1,34"
-        elvHealerColor["actionbar"]["bar6"]["buttonSize"] = 28
+        elvHealerColor["actionbar"]["bar1"]["visibility"] = ""
+        elvHealerColor["actionbar"]["bar5"]["visibility"] = ""
+        elvHealerColor["actionbar"]["bar6"]["visibility"] = ""
+        elvHealerColor["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,68"
+        elvHealerColor["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,1,37"
+        elvHealerColor["actionbar"]["bar6"]["buttonSize"] = 30
         elvHealerColor["actionbar"]["bar6"]["buttonsPerRow"] = 12
         elvHealerColor["actionbar"]["bar6"]["backdrop"] = false
     end
@@ -72,6 +84,8 @@ local function ConfigureLeftActionBars(elv, elvColor, elvHealer, elvHealerColor)
         elv["actionbar"]["bar4"]["buttonSize"] = 40
         elv["actionbar"]["bar4"]["buttonsPerRow"] = 2
         elv["actionbar"]["bar4"]["backdrop"] = false
+        elv["actionbar"]["bar3"]["visibility"] = "[petbattle] hide; show"
+        elv["actionbar"]["bar4"]["visibility"] = "[petbattle] hide; show"
     end
 
     if (elvColor ~= nil) then
@@ -84,6 +98,8 @@ local function ConfigureLeftActionBars(elv, elvColor, elvHealer, elvHealerColor)
         elvColor["actionbar"]["bar4"]["buttonSize"] = 40
         elvColor["actionbar"]["bar4"]["buttonsPerRow"] = 2
         elvColor["actionbar"]["bar4"]["backdrop"] = false
+        elvColor["actionbar"]["bar3"]["visibility"] = "[petbattle] hide; show"
+        elvColor["actionbar"]["bar4"]["visibility"] = "[petbattle] hide; show"
     end
 
     if (elvHealer ~= nil) then
@@ -96,6 +112,8 @@ local function ConfigureLeftActionBars(elv, elvColor, elvHealer, elvHealerColor)
         elvHealer["actionbar"]["bar4"]["buttonSize"] = 40
         elvHealer["actionbar"]["bar4"]["buttonsPerRow"] = 2
         elvHealer["actionbar"]["bar4"]["backdrop"] = false
+        elvHealer["actionbar"]["bar3"]["visibility"] = "[petbattle] hide; show"
+        elvHealer["actionbar"]["bar4"]["visibility"] = "[petbattle] hide; show"
     end
 
     if (elvHealerColor ~= nil) then
@@ -108,6 +126,8 @@ local function ConfigureLeftActionBars(elv, elvColor, elvHealer, elvHealerColor)
         elvHealerColor["actionbar"]["bar4"]["buttonSize"] = 40
         elvHealerColor["actionbar"]["bar4"]["buttonsPerRow"] = 2
         elvHealerColor["actionbar"]["bar4"]["backdrop"] = false
+        elvHealerColor["actionbar"]["bar3"]["visibility"] = "[petbattle] hide; show"
+        elvHealerColor["actionbar"]["bar4"]["visibility"] = "[petbattle] hide; show"
     end
 
     if (elv ~= nil and elv["actionbar"]["bar4"]["professionQuality"] ~= nil) then
@@ -243,31 +263,39 @@ local function ConfigureRaidFrames(elv, elvColor, elvHealer, elvHealerColor)
 end
 
 local function ConfigureUnitFrames(elv, elvColor, elvHealer, elvHealerColor)
-    elv["movers"]["BossHeaderMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-700,-300"
-    elv["movers"]["ElvUF_FocusMover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-800,550"
-    elv["movers"]["ElvUF_PartyMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,965,535"
-    
-    -- elvColor["movers"]["BossHeaderMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-700,-300"
-    -- elvColor["movers"]["ElvUF_PartyMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,965,535"
-    -- elvColor["movers"]["ElvUF_FocusMover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-800,550"
+    elv["movers"]["BossHeaderMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-812,-453" -- TOPRIGHT,ElvUIParent,TOPRIGHT,-385,-453
+    elv["movers"]["ArenaHeaderMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-693,-445" -- TOPRIGHT,UIParent,TOPRIGHT,-266,-445 
+    elv["movers"]["ElvUF_FocusMover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-952,520 " -- BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-538,520 
+    elv["movers"]["ElvUF_PartyMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,965,535" -- BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,525,535
+    elv["movers"]["LootFrameMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-1119,-562" -- TOPRIGHT,ElvUIParent,TOPRIGHT,-692,-562
 
-    -- elvHealer["movers"]["BossHeaderMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-700,-300"
-    -- elvHealerColor["movers"]["BossHeaderMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-700,-300"
+    elvColor["movers"]["BossHeaderMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-812,-453" -- TOPRIGHT,ElvUIParent,TOPRIGHT,-385,-453
+    elvColor["movers"]["ArenaHeaderMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-693,-445" -- TOPRIGHT,UIParent,TOPRIGHT,-266,-445 
+    elvColor["movers"]["ElvUF_FocusMover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-952,520 " -- BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-538,520 
+    elvColor["movers"]["ElvUF_PartyMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,965,535" -- BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,525,535
+    elvColor["movers"]["LootFrameMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-1119,-562" -- TOPRIGHT,ElvUIParent,TOPRIGHT,-692,-562
 
-    -- elvHealer["movers"]["ElvUF_FocusMover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-800,550"
-    -- elvHealerColor["movers"]["ElvUF_FocusMover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-800,550"
+    elvHealer["movers"]["BossHeaderMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-812,-453" -- TOPRIGHT,ElvUIParent,TOPRIGHT,-385,-453
+    elvHealer["movers"]["ArenaHeaderMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-693,-445" -- TOPRIGHT,UIParent,TOPRIGHT,-266,-445 
+    elvHealer["movers"]["ElvUF_FocusMover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-952,520 " -- BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-538,520 
+    elvHealer["movers"]["LootFrameMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-1119,-562" -- TOPRIGHT,ElvUIParent,TOPRIGHT,-692,-562
 
+    elvHealerColor["movers"]["BossHeaderMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-812,-453" -- TOPRIGHT,ElvUIParent,TOPRIGHT,-385,-453
+    elvHealerColor["movers"]["ArenaHeaderMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-693,-445" -- TOPRIGHT,UIParent,TOPRIGHT,-266,-445 
+    elvHealerColor["movers"]["ElvUF_FocusMover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-952,520 " -- BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-538,520 
+    elvHealerColor["movers"]["LootFrameMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-1119,-562" -- TOPRIGHT,ElvUIParent,TOPRIGHT,-692,-562
 end
 
 local function ConfigureMiscMovers(elv, elvColor, elvHealer, elvHealerColor)
-    elv["movers"]["AltPowerBarMover"] = "BOTTOM,ElvUIParent,BOTTOM,0,101"
+    -- elv["movers"]["AltPowerBarMover"] = "BOTTOM,ElvUIParent,BOTTOM,0,101"
     -- elvColor["movers"]["AltPowerBarMover"] = "BOTTOM,ElvUIParent,BOTTOM,0,101"
     -- elvHealer["movers"]["AltPowerBarMover"] = "BOTTOM,ElvUIParent,BOTTOM,0,101"
     -- elvHealerColor["movers"]["AltPowerBarMover"] = "BOTTOM,ElvUIParent,BOTTOM,0,101"
 end
 
 function CJ:ApplyElvUITweaks(opts)
-    local E = select(1, unpack(ElvUI))
+    -- TODO: Can this be deleted?
+    -- local E = select(1, unpack(ElvUI))
 
     local elv = ElvDB["profiles"][opts.profiles.atrocityUI]
     local elvColor = ElvDB["profiles"][opts.profiles.atrocityUIColor]
@@ -281,13 +309,25 @@ function CJ:ApplyElvUITweaks(opts)
 
     -- TODO
     -- GM Ticket Frame ElvUi Frame (move right a few pixels out of action bar 4)
+    -- Party Frame is too far left on ultrawide
 
-    DisableBags(elvPriv, elvPrivColor, elvPrivHealer, elvPrivHealerColor)
-    ConfigurePrimaryActionBars(elv, elvColor, elvHealer, elvHealerColor)
-    ConfigureLeftActionBars(elv, elvColor, elvHealer, elvHealerColor)
-    ConfigurePetBars(elv, elvColor, elvHealer, elvHealerColor)
-    ConfigurePanels(elv, elvColor, elvHealer, elvHealerColor)
-    ConfigureRaidFrames(elv, elvColor, elvHealer, elvHealerColor)
-    ConfigureUnitFrames(elv, elvColor, elvHealer, elvHealerColor)
+    if opts.elvUi.disableBags then
+        DisableBags(elvPriv, elvPrivColor, elvPrivHealer, elvPrivHealerColor)
+    end
+    if opts.elvUi.primaryActionBars then
+        ConfigurePrimaryActionBars(elv, elvColor, elvHealer, elvHealerColor)
+    end
+    if opts.elvUi.secondaryActionBars then
+        ConfigureLeftActionBars(elv, elvColor, elvHealer, elvHealerColor)
+    end
+    if opts.elvUi.panels then
+        ConfigurePetBars(elv, elvColor, elvHealer, elvHealerColor)
+        ConfigurePanels(elv, elvColor, elvHealer, elvHealerColor)
+        ConfigureRaidFrames(elv, elvColor, elvHealer, elvHealerColor)
+    end
+    if opts.elvUi.unitFrames then
+        ConfigureUnitFrames(elv, elvColor, elvHealer, elvHealerColor)
+    end
+    
     ConfigureMiscMovers(elv, elvColor, elvHealer, elvHealerColor)
 end
