@@ -16,16 +16,12 @@ local function ChatModule()
     return AE and AE.GetModule and AE:GetModule("Chat", true)
 end
 
-local function ChatDB()
-    local mod = ChatModule()
-    return mod and mod.db
-end
-
 -- Where the panel's right edge lands, in UIParent coordinates. The panel is
 -- anchored BOTTOMLEFT by default, so its offset counts; any other anchor and the
 -- offset is measured from somewhere else, so ignore it and use the bare width.
 function CJ:ChatPanelRight(width)
-    local pos = (ChatDB() or {}).Position
+    local mod = ChatModule()
+    local pos = mod and mod.db and mod.db.Position
     local from = pos and pos.AnchorFrom or ""
     if from:find("LEFT") and pos.AnchorTo == from then
         return (pos.XOffset or 0) + width
@@ -37,20 +33,20 @@ end
 -- The panel is one segment of the bottom strip, so its height is the strip's --
 -- the bars, meters and pet bar beside it all get sized off the same number.
 function CJ:ApplyAtrocityEssentialsTweaks(opts)
-    local chat = ChatDB()
+    local mod = ChatModule()
+    local chat = mod and mod.db
     if not chat then
         CJ:Print("atrocityEssentials Chat not loaded, skipping chat panel size.")
         return false
     end
 
-    CJ:Print(("Chat panel: %.0fx%.0f -> %dx%d")
-        :format(chat.Width or 0, chat.Height or 0, opts.chat.width, opts.bottomStripHeight))
+    CJ:Debug("Chat panel: %.0fx%.0f -> %dx%d",
+        chat.Width or 0, chat.Height or 0, opts.chat.width, opts.bottomStripHeight)
     chat.Width, chat.Height = opts.chat.width, opts.bottomStripHeight
 
     -- Resizes the live panel and re-anchors the chat frames inside it. Only does
     -- anything once the module has built its panel, hence the pcall -- the write
     -- above is what survives the reload either way.
-    local mod = ChatModule()
-    if mod and mod.UpdatePanel then pcall(mod.UpdatePanel, mod) end
+    if mod.UpdatePanel then pcall(mod.UpdatePanel, mod) end
     return true
 end

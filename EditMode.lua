@@ -20,7 +20,7 @@ local BUFF_BLOCK_HEIGHT = 145
 
 -- The minimap's own placement is ours (see ConfigureMinimap), but its SIZE is
 -- EllesmereUIMinimap's, and it varies with border style and the info rows the
--- profile turns on. Read the live frame, same as ChatPanelWidth does for chat.
+-- profile turns on -- so read the live frame rather than assuming a size.
 -- Fallbacks assume the profile's own TOPRIGHT 1,1 inset and a ~200px cluster.
 local MINIMAP_SIZE_FALLBACK = 200
 
@@ -35,8 +35,8 @@ local function MinimapCorner()
     end
     local s = mm:GetEffectiveScale() / UIParent:GetEffectiveScale()
     left, top, bottom = left * s, top * s, bottom * s
-    CJ:Print(("MinimapCorner: %s left %.1f top %.1f bottom %.1f (UIParent %.1fx%.1f)")
-        :format(mm:GetName() or "?", left, top, bottom, UIParent:GetRight(), UIParent:GetTop()))
+    CJ:Debug("MinimapCorner: %s left %.1f top %.1f bottom %.1f (UIParent %.1fx%.1f)",
+        mm:GetName() or "?", left, top, bottom, UIParent:GetRight(), UIParent:GetTop())
     return left, top, bottom
 end
 
@@ -84,8 +84,8 @@ local function SetPos(layout, frame, name, point, relPoint, x, y)
         and sys.isInDefaultPosition == false then
         return false
     end
-    CJ:Print(("EditMode %s: %s %.1f,%.1f -> %s %.1f,%.1f")
-        :format(name, a.point or "unset", a.offsetX or 0, a.offsetY or 0, point, x, y))
+    CJ:Debug("EditMode %s: %s %.1f,%.1f -> %s %.1f,%.1f",
+        name, a.point or "unset", a.offsetX or 0, a.offsetY or 0, point, x, y)
     a.point, a.relativeTo, a.relativePoint = point, "UIParent", relPoint
     a.offsetX, a.offsetY = x, y
     -- Left true, Blizzard re-snaps the frame to its preset spot and
@@ -111,7 +111,7 @@ local function ConfigureAuras(layout)
     local y = top - UIParent:GetTop()
 
     local buffInset, debuffInset = IconInset(BuffFrame), IconInset(DebuffFrame)
-    CJ:Print(("Aura icon insets: buffs %.1f, debuffs %.1f"):format(buffInset, debuffInset))
+    CJ:Debug("Aura icon insets: buffs %.1f, debuffs %.1f", buffInset, debuffInset)
 
     local changed = SetPos(layout, BuffFrame, "Buffs", "TOPRIGHT", "TOPRIGHT",
         x + buffInset, y - PAD)

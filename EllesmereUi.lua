@@ -1,16 +1,19 @@
 ---@class CrackedJarTweaks
 local CJ = LibStub("AceAddon-3.0"):GetAddon("CrackedJarTweaks")
 
--- ponytail: one profile. ElvUI needed four (base/[C]/Healer/Healer[C]); EllesmereUI
--- expresses those variations with specOverrides inside a single profile, so the
--- four-way fan-out this file used to carry is gone. Add specOverrides here if a
--- healer-only difference actually shows up.
-
 local function DeepCopy(v)
     if type(v) ~= "table" then return v end
     local t = {}
     for k, sub in pairs(v) do t[k] = DeepCopy(sub) end
     return t
+end
+
+-- Every layout write has to land twice: in the live store a profile load
+-- restores into EllesmereUIDB, and in the baseline the spec-override layer flush
+-- wipes and refills that same store from. Write only the live one and the first
+-- flush after login reverts us.
+local function Baseline(profile)
+    return profile.specUnlockOverrides and profile.specUnlockOverrides.baselineLayout
 end
 
 local function AddonDB(profile, addon)
@@ -24,12 +27,9 @@ local function Bar(bars, name)
     return bars[name]
 end
 
--- Every SetPos call below is seeded from the working EllesmereUI layout, NOT
--- converted from ElvUI. ElvUI stored corner-anchored offset strings
--- ("BOTTOM,ElvUIParent,BOTTOM,1,71") in its own scaled coordinate space; these are
--- CENTER-relative x/y in EllesmereUI's, which tracks EllesmereUIDB.ppUIScale.
--- Converting between them needs ElvUI's UIScale, and ElvUI is uninstalled -- its
--- SavedVariables are gone. So these are the numbers to hand-tune, not derived ones.
+-- CENTER-relative x/y in EllesmereUI's coordinate space, which tracks
+-- EllesmereUIDB.ppUIScale. Every call below is seeded from a working layout and
+-- hand-tuned from there -- there is nothing to derive these from.
 local function SetPos(positions, name, x, y)
     positions[name] = { point = "CENTER", relPoint = "CENTER", x = x, y = y }
 end
@@ -46,44 +46,38 @@ local PAD = 1
 -- offsets are edge-to-edge: for TOP/BOTTOM, offsetY is the gap and offsetX slides
 -- along the shared edge; for LEFT/RIGHT it is the other way round, and LEFT counts
 -- leftward so its gap is negative.
---
--- Two stores, both mandatory. unlockLayout is what a profile load restores into
--- EllesmereUIDB.unlockAnchors; baselineLayout is what the spec-override layer
--- flush wipes and refills that same table from. Writing only the first means the
--- first flush after login reverts us.
 local function SetAnchor(profile, key, target, side, offsetX, offsetY)
     profile.unlockLayout = profile.unlockLayout or {}
-    local base = profile.specUnlockOverrides and profile.specUnlockOverrides.baselineLayout
-    for _, store in ipairs({ profile.unlockLayout, base or profile.unlockLayout }) do
+    local anchor = {
+        target = target,
+        side = side,
+        offsetX = offsetX or 0,
+        offsetY = offsetY or 0,
+    }
+    for _, store in ipairs({ profile.unlockLayout, Baseline(profile) }) do
         store.anchors = store.anchors or {}
-        store.anchors[key] = {
-            target = target,
-            side = side,
-            offsetX = offsetX or 0,
-            offsetY = offsetY or 0,
-        }
+        store.anchors[key] = DeepCopy(anchor)
     end
 end
 
 -- barPositions carry the same convention as SetPos -- x/y are offsets from
 -- UIParent's CENTER, and point names which edge of the bar frame is pinned there.
--- Same two-store problem as anchors: the layer flush refills barPositions from
--- baselineLayout.abPos.
+-- The baseline's copy lives under abPos rather than alongside the anchors.
 local function SetBarPos(profile, eab, key, x, y)
     eab.barPositions = eab.barPositions or {}
     local old = eab.barPositions[key]
     SetPos(eab.barPositions, key, x, y)
-    local base = profile.specUnlockOverrides and profile.specUnlockOverrides.baselineLayout
+    local base = Baseline(profile)
     if base then
         base.abPos = base.abPos or {}
         SetPos(base.abPos, key, x, y)
     end
 
     local uiW, uiH = UIParent:GetSize()
-    CJ:Print(("SetBarPos %s: %s -> CENTER %.1f,%.1f | UIParent %.1fx%.1f | baseline abPos %s")
-        :format(key,
-            old and ("%s %.1f,%.1f"):format(old.point or "?", old.x or 0, old.y or 0) or "unset",
-            x, y, uiW, uiH, base and "written" or "MISSING"))
+    CJ:Debug("SetBarPos %s: %s -> CENTER %.1f,%.1f | UIParent %.1fx%.1f | baseline abPos %s",
+        key,
+        old and ("%s %.1f,%.1f"):format(old.point or "?", old.x or 0, old.y or 0) or "unset",
+        x, y, uiW, uiH, base and "written" or "MISSING")
 end
 
 -- Everything along the bottom of the screen is opts.bottomStripHeight tall: the
@@ -122,14 +116,13 @@ local function MatchBarHeight(bar, height, rows)
     -- means the height is unreachable and the block stays a little short.
     local extra = physTarget - (rows * physBtn + (rows - 1) * physPad)
     bar._matchExtraPixelsH = (extra > 0 and extra <= rows) and extra or nil
-    return bar.buttonWidth, bar._matchExtraPixelsH or 0, onePx
+    return bar.buttonWidth, bar._matchExtraPixelsH or 0
 end
 
--- Same wipe-and-refill problem for grow directions: baselineLayout.abGrow is
--- re-applied over bars[key].growDirection on every layer flush. Mirror whatever
--- the bar settings now say rather than tracking which keys we touched.
+-- Grow directions have no setter of their own, so mirror whatever the bar
+-- settings now say rather than tracking which keys we touched.
 local function SyncGrowToBaseline(profile, eab)
-    local base = profile.specUnlockOverrides and profile.specUnlockOverrides.baselineLayout
+    local base = Baseline(profile)
     local abGrow = base and base.abGrow
     if not abGrow then return end
     for key, cfg in pairs(eab.bars or {}) do
@@ -169,26 +162,25 @@ local function ConfigureSecondaryActionBars(profile, chatWidth, stripHeight)
     local bar5 = Bar(eab.bars, "Bar5")
 
     -- The two sit edge to edge as one block, so their buttons have to be the
-    -- same size -- and that size is whatever makes 6 rows fill the strip.
+    -- same size -- and that size is whatever makes 6 rows fill the strip. Same
+    -- padding and row count in, so both come back with the same button size.
     local pad = bar4.buttonPadding or PAD
-    local btn, extra
 
     for _, bar in ipairs({ bar4, bar5 }) do
         bar.buttonPadding = pad
-        btn, extra = MatchBarHeight(bar, stripHeight, 6)
+        MatchBarHeight(bar, stripHeight, 6)
         bar.orientation = "vertical"
         bar.overrideNumIcons = 12
         -- On a vertical bar overrideNumRows is the COLUMN count (see the layout
         -- loop's isVertical branch), so 2 is the 2-wide x 6-tall block.
         bar.overrideNumRows = 2
-        -- Width-match padding left over from Bar5's old 10-column shape. It adds
-        -- a pixel to the leading columns, which would leave the two bars
-        -- different widths now that they are the same grid.
+        -- The WIDTH-match spare, which adds a pixel to the leading columns. Both
+        -- bars have to come out the same width, so neither may carry it.
         bar._matchExtraPixels = nil
 
-        -- Always visible. Bar4 was on mouseover, which parks mouseoverAlpha at 0
-        -- and stashes the real alpha in _savedBarAlpha -- clearing the mode alone
-        -- would leave the bar shown but fully transparent, so undo the stash too
+        -- Always visible. Mouseover mode parks mouseoverAlpha at 0 and stashes
+        -- the real alpha in _savedBarAlpha, so clearing the mode alone would
+        -- leave the bar shown but fully transparent -- undo the stash too
         -- (VisibilityCompat.ApplyMode does the same on a mode change).
         bar.barVisibility = "always"
         bar.alwaysHidden = false
@@ -202,11 +194,12 @@ local function ConfigureSecondaryActionBars(profile, chatWidth, stripHeight)
     -- centre and the corner has to be converted to one -- derive the frame size
     -- from the 2x6 grid set above rather than reading the live frame, which has
     -- not been re-laid-out yet.
+    local btn, extra = bar4.buttonWidth, bar4._matchExtraPixelsH or 0
     local barW, barH = 2 * btn + pad, stripHeight
     local uiW, uiH = UIParent:GetSize()
     -- The third term in the sum, and the one SetBarPos cannot see.
-    CJ:Print(("Bar4/Bar5: 6 rows pad %.1f -> btn %.1f +%d spare px, frame %.1fx%.1f")
-        :format(pad, btn, extra, barW, barH))
+    CJ:Debug("Bar4/Bar5: 6 rows pad %.1f -> btn %.1f +%d spare px, frame %.1fx%.1f",
+        pad, btn, extra, barW, barH)
     SetBarPos(profile, eab, "Bar4",
         -uiW / 2 + CJ:ChatPanelRight(chatWidth) + CHAT_GAP + barW / 2,
         -uiH / 2 + PAD + barH / 2)
@@ -228,8 +221,8 @@ local function ConfigureSecondaryActionBars(profile, chatWidth, stripHeight)
         and math.ceil((pet.overrideNumIcons or 10) / (pet.overrideNumRows or 2))
         or (pet.overrideNumRows or 1)
     local petBtn, petExtra = MatchBarHeight(pet, stripHeight, petRows)
-    CJ:Print(("PetBar: %d rows pad %.1f -> btn %.1f +%d spare px (strip %d tall)")
-        :format(petRows, pet.buttonPadding or PAD, petBtn, petExtra, stripHeight))
+    CJ:Debug("PetBar: %d rows pad %.1f -> btn %.1f +%d spare px (strip %d tall)",
+        petRows, pet.buttonPadding or PAD, petBtn, petExtra, stripHeight)
 end
 
 -- Container's TOPLEFT 1px in from UIParent's. RF reads unlockPos through
@@ -251,36 +244,30 @@ end
 -- word on it. An elems entry carries w/h alongside x/y, and the unlock layer
 -- pushes both back through the element's setWidth/setHeight on every flush --
 -- which for the damage meter windows overwrites dm.windows[i].width/height with
--- whatever was last harvested. Two stores, same reason as SetAnchor: the live
--- one, and the baseline the layer flush refills from.
+-- whatever was last harvested.
 local function SetElemSize(profile, key, w, h)
-    local base = profile.specUnlockOverrides and profile.specUnlockOverrides.baselineLayout
-    for _, store in ipairs({ profile.unlockLayout or {}, base or {} }) do
+    for _, store in ipairs({ profile.unlockLayout or {}, Baseline(profile) or {} }) do
         local e = store.elems and store.elems[key]
         if e then
-            CJ:Print(("SetElemSize %s: %.1fx%.1f -> %.1fx%.1f")
-                :format(key, e.w or 0, e.h or 0, w, h))
+            CJ:Debug("SetElemSize %s: %.1fx%.1f -> %.1fx%.1f", key, e.w or 0, e.h or 0, w, h)
             e.w, e.h = w, h
         end
     end
 end
 
--- ElvUI's raid1/2/3 roleIcon.enable + roleIcon.damager = false. EllesmereUI has a
--- single raid frame config rather than three raid group profiles, and expresses
--- "enabled" as any roleIconStyle other than "none".
+-- Role icons for tanks and healers only. "Enabled" is expressed as any
+-- roleIconStyle other than "none".
 local function ConfigureRaidFrames(profile)
     local erf = AddonDB(profile, "EllesmereUIRaidFrames")
     -- "Modern Light" in the UI; the stored key stayed blizzLight for back-compat.
     erf.roleIconStyle = "blizzLight"
     erf.showRoleForDPS = false
 
-    -- Two writes for one position: unlockPos is the live module store, but a
-    -- spec layer's elems entry is re-applied over it on every layer flush. Set
-    -- the baseline entry too and MatchSpecLayoutsToBase pushes it into the
-    -- non-healer forks (healer keeps its centred raid frames).
+    -- unlockPos is the live store here. Writing the baseline too lets
+    -- MatchSpecLayoutsToBase push the position into the non-healer forks; healer
+    -- keeps its centred raid frames.
     erf.unlockPos = DeepCopy(RAID_TOPLEFT)
-    SetElemPos(profile.specUnlockOverrides and profile.specUnlockOverrides.baselineLayout,
-        "RF_RaidFrames", RAID_TOPLEFT)
+    SetElemPos(Baseline(profile), "RF_RaidFrames", RAID_TOPLEFT)
 end
 
 -- Minimap 1px in from the top right. Same shape as unlockPos and read the same
@@ -292,8 +279,7 @@ local function ConfigureMinimap(profile)
     local emm = AddonDB(profile, "EllesmereUIMinimap")
     emm.minimap = emm.minimap or {}
     emm.minimap.position = DeepCopy(MINIMAP_TOPRIGHT)
-    SetElemPos(profile.specUnlockOverrides and profile.specUnlockOverrides.baselineLayout,
-        "EBS_Minimap", MINIMAP_TOPRIGHT)
+    SetElemPos(Baseline(profile), "EBS_Minimap", MINIMAP_TOPRIGHT)
 end
 
 -- Dark Mode is not one stored flag: each module keeps its own in its own shape
@@ -302,10 +288,8 @@ end
 -- table that may not even be loaded, so write the three directly -- same values
 -- each provider's setOn(false) writes.
 --
--- The health bars in this profile were dark because of per-unit customFillColor
--- (0.03 grey), NOT Dark Mode, which was already off. healthClassColored is the
--- unit's "class coloured" toggle and takes priority over customFillColor, so the
--- custom colour stays parked in the profile instead of being deleted.
+-- healthClassColored takes priority over the per-unit customFillColor, so setting
+-- it leaves any custom colour parked in the profile rather than deleting it.
 -- boss is excluded: it never class-colours (no player class on a boss).
 local CLASS_COLOURED_UNITS = { "player", "target", "pet", "focus", "focustarget", "targettarget" }
 
@@ -333,24 +317,8 @@ local function ConfigureClassColours(profile)
     erf._darkPrevHealthColorMode, erf._darkPrevPartyHealthColorMode = nil, nil
 end
 
--- Ultrawide pull-in. ElvUI used absolute corner-anchored mover strings; these are
--- CENTER-relative offsets, so the ultrawide/standard split is just the numbers.
-local function ConfigureUnitFrames(profile)
-    local euf = AddonDB(profile, "EllesmereUIUnitFrames")
-    euf.positions = euf.positions or {}
-
-    -- SetPos(euf.positions, "player", -408, -300.5)
-    -- SetPos(euf.positions, "target", 408, -301)
-    -- SetPos(euf.positions, "targettarget", 595, -278)
-    -- SetPos(euf.positions, "focus", 674.5, -170.5)
-    -- SetPos(euf.positions, "focustarget", 625, -198)
-    -- SetPos(euf.positions, "boss", 684, -12)
-
-    -- profile.tooltipFixedPos = { centerX = 1291.333435058594, centerY = -386.4999237060547 }
-end
-
--- Replaces the old Details tweaks. EllesmereUI ships its own meter, so there is no
--- profile to apply/save around the edit -- windows is a plain array indexed 1..windowCount.
+-- windows is a plain array indexed 1..windowCount -- no profile to apply/save
+-- around the edit.
 local function ConfigureDamageMeters(profile, stripHeight, combinedWidth)
     local edm = AddonDB(profile, "EllesmereUIDamageMeters")
     edm.dm = edm.dm or {}
@@ -361,7 +329,6 @@ local function ConfigureDamageMeters(profile, stripHeight, combinedWidth)
     dm.windows = dm.windows or {}
 
     -- Window 1 is Healing Done (curDMType 2), window 2 is Damage Done (curDMType 0).
-    -- Details' third (deaths) window has no counterpart here.
     -- Height matches the chat panel so the bottom strip lines up across the screen.
     -- The two windows sit edge to edge (EDM_Win2's LEFT anchor has no offset), so
     -- the combined width is just split in half.
@@ -404,8 +371,8 @@ end
 -- forced back to base, anything unlisted stays whatever the fork holds.
 local BASE_MATCHED_KEYS = {
     "EDM_Win1", "EDM_Win2", "PetBar", "EBS_Minimap",
-    -- The action bar layout is the same in every spec, and a fork holding the
-    -- pre-stack anchors would quietly keep the old arrangement on that spec.
+    -- The action bar layout is the same in every spec, so a fork holding its own
+    -- copy would quietly keep a stale arrangement on that spec.
     "MainBar", "Bar2", "Bar3", "Bar4", "Bar5",
 }
 -- Healer deliberately centres its raid/party frames over the action bars; every
@@ -442,7 +409,7 @@ end
 -- Self-skips when the profile has no forks.
 local function MatchSpecLayoutsToBase(profile)
     local store = profile.specUnlockOverrides
-    local base = store and store.baselineLayout
+    local base = Baseline(profile)
     if not base or not store.layouts then return end
 
     local healer = HealerGroupId(profile)
@@ -483,7 +450,6 @@ function CJ:ApplyEllesmereUITweaks(opts)
     -- Core.lua's options table if turning this off ever matters.
     ConfigureMinimap(profile)
     ConfigureClassColours(profile)
-    --if opts.eui.unitFrames then ConfigureUnitFrames(profile) end
     if opts.eui.damageMeters then
         ConfigureDamageMeters(profile, opts.bottomStripHeight, opts.meterWidth)
     end
