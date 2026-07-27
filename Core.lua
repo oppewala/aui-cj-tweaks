@@ -124,12 +124,12 @@ function CJ:ApplyTweaks()
     CJ:ApplyDetailsTweaks(opts)
 
     -- TODO
-    -- Pop up message to move quest log in edit mode
+    -- Pop up message to move quest log in edit mode after applying tweaks
     -- Move falcon to top part of screen
     -- Better Cooldown Manager - Add and move Additional Custom for additional tracked auras
 
     -- ApplyWeakAurasTweaks(opts)
     -- ApplyOmniCDTweaks(opts)
 
-    -- ReloadUI()
+    ReloadUI()
 end

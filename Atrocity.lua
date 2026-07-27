@@ -38,6 +38,9 @@ function CJ:ApplyDetailsTweaks(opts)
     if not opts.elvUi.panels then
         return
     end
+    
+    -- Apply the profile first, so that references to Details below will resolve the correct profile.
+    Details:ApplyProfile(opts.profiles.atrocityUI)
 
     -- DEFAULT_CHAT_FRAME:AddMessage( ( GetScreenWidth() * UIParent:GetEffectiveScale() ).."x"..( GetScreenHeight() * UIParent:GetEffectiveScale() ) )
     for id, instance in Details:ListInstances() do
@@ -45,14 +48,19 @@ function CJ:ApplyDetailsTweaks(opts)
 
         local position = instance:CreatePositionTable()
 
+        -- h, w, x, y
+        position.w = 248
+
         -- Main damage window
         if id == 1 then
             position.h = 226 --217
+            position.x = -254
         end
 
         -- Healing window
         if id == 2 then
             position.h = 155 --132
+            position.y = 75
         end
 
         -- Deaths window
@@ -71,7 +79,7 @@ function CJ:ApplyDetailsTweaks(opts)
     Details.tooltip.anchor_relative = "bottomright"
     Details.tooltip.anchor_offset = { 0, -6 }
 
-    Details:SaveProfile()
-    Details:ApplyProfile(opts.profiles.atrocityUI, false)
+    Details:SaveProfile(opts.profiles.atrocityUI)
+    Details:ApplyProfile(opts.profiles.atrocityUI)
 end
 

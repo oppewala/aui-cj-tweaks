@@ -29,9 +29,9 @@ local function ConfigurePrimaryActionBars(elv, elvColor, elvHealer, elvHealerCol
         elv["actionbar"]["bar1"]["visibility"] = ""
         elv["actionbar"]["bar5"]["visibility"] = ""
         elv["actionbar"]["bar6"]["visibility"] = ""
-        elv["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,68"
+        elv["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,1,71"
         elv["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,1,37"
-        elv["actionbar"]["bar6"]["buttonSize"] = 30
+        elv["actionbar"]["bar6"]["buttonSize"] = 33
         elv["actionbar"]["bar6"]["buttonsPerRow"] = 12
         elv["actionbar"]["bar6"]["backdrop"] = false
     end
@@ -41,9 +41,9 @@ local function ConfigurePrimaryActionBars(elv, elvColor, elvHealer, elvHealerCol
         elvColor["actionbar"]["bar1"]["visibility"] = ""
         elvColor["actionbar"]["bar5"]["visibility"] = ""
         elvColor["actionbar"]["bar6"]["visibility"] = ""
-        elvColor["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,68"
+        elvColor["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,1,71"
         elvColor["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,1,37"
-        elvColor["actionbar"]["bar6"]["buttonSize"] = 30
+        elvColor["actionbar"]["bar6"]["buttonSize"] = 33
         elvColor["actionbar"]["bar6"]["buttonsPerRow"] = 12
         elvColor["actionbar"]["bar6"]["backdrop"] = false
     end
@@ -53,9 +53,9 @@ local function ConfigurePrimaryActionBars(elv, elvColor, elvHealer, elvHealerCol
         elvHealer["actionbar"]["bar5"]["visibility"] = ""
         elvHealer["actionbar"]["bar6"]["visibility"] = ""
         elvHealer["actionbar"]["bar5"]["heightMult"] = 3
-        elvHealer["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,68"
+        elvHealer["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,1,71"
         elvHealer["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,1,37"
-        elvHealer["actionbar"]["bar6"]["buttonSize"] = 30
+        elvHealer["actionbar"]["bar6"]["buttonSize"] = 33
         elvHealer["actionbar"]["bar6"]["buttonsPerRow"] = 12
         elvHealer["actionbar"]["bar6"]["backdrop"] = false
     end
@@ -65,9 +65,9 @@ local function ConfigurePrimaryActionBars(elv, elvColor, elvHealer, elvHealerCol
         elvHealerColor["actionbar"]["bar1"]["visibility"] = ""
         elvHealerColor["actionbar"]["bar5"]["visibility"] = ""
         elvHealerColor["actionbar"]["bar6"]["visibility"] = ""
-        elvHealerColor["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,0,68"
+        elvHealerColor["movers"]["ElvAB_5"] = "BOTTOM,ElvUIParent,BOTTOM,1,71"
         elvHealerColor["movers"]["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,1,37"
-        elvHealerColor["actionbar"]["bar6"]["buttonSize"] = 30
+        elvHealerColor["actionbar"]["bar6"]["buttonSize"] = 33
         elvHealerColor["actionbar"]["bar6"]["buttonsPerRow"] = 12
         elvHealerColor["actionbar"]["bar6"]["backdrop"] = false
     end
@@ -83,6 +83,7 @@ local function ConfigureLeftActionBars(elv, elvColor, elvHealer, elvHealerColor)
         elv["movers"]["ElvAB_4"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,489,5"
         elv["actionbar"]["bar4"]["buttonSize"] = 40
         elv["actionbar"]["bar4"]["buttonsPerRow"] = 2
+        elv["actionbar"]["bar3"]["backdrop"] = true
         elv["actionbar"]["bar4"]["backdrop"] = false
         elv["actionbar"]["bar3"]["visibility"] = "[petbattle] hide; show"
         elv["actionbar"]["bar4"]["visibility"] = "[petbattle] hide; show"
@@ -97,6 +98,7 @@ local function ConfigureLeftActionBars(elv, elvColor, elvHealer, elvHealerColor)
         elvColor["movers"]["ElvAB_4"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,489,5"
         elvColor["actionbar"]["bar4"]["buttonSize"] = 40
         elvColor["actionbar"]["bar4"]["buttonsPerRow"] = 2
+        elvColor["actionbar"]["bar3"]["backdrop"] = true
         elvColor["actionbar"]["bar4"]["backdrop"] = false
         elvColor["actionbar"]["bar3"]["visibility"] = "[petbattle] hide; show"
         elvColor["actionbar"]["bar4"]["visibility"] = "[petbattle] hide; show"
@@ -112,6 +114,7 @@ local function ConfigureLeftActionBars(elv, elvColor, elvHealer, elvHealerColor)
         elvHealer["actionbar"]["bar4"]["buttonSize"] = 40
         elvHealer["actionbar"]["bar4"]["buttonsPerRow"] = 2
         elvHealer["actionbar"]["bar4"]["backdrop"] = false
+        elvHealer["actionbar"]["bar3"]["backdrop"] = true
         elvHealer["actionbar"]["bar3"]["visibility"] = "[petbattle] hide; show"
         elvHealer["actionbar"]["bar4"]["visibility"] = "[petbattle] hide; show"
     end
@@ -125,6 +128,7 @@ local function ConfigureLeftActionBars(elv, elvColor, elvHealer, elvHealerColor)
         elvHealerColor["movers"]["ElvAB_4"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,489,5"
         elvHealerColor["actionbar"]["bar4"]["buttonSize"] = 40
         elvHealerColor["actionbar"]["bar4"]["buttonsPerRow"] = 2
+        elvHealerColor["actionbar"]["bar3"]["backdrop"] = true
         elvHealerColor["actionbar"]["bar4"]["backdrop"] = false
         elvHealerColor["actionbar"]["bar3"]["visibility"] = "[petbattle] hide; show"
         elvHealerColor["actionbar"]["bar4"]["visibility"] = "[petbattle] hide; show"
@@ -176,25 +180,37 @@ end
 
 local function ConfigurePanels(elv, elvColor, elvHealer, elvHealerColor)
     if (elv ~= nil) then
+        elv["chat"]["separateSizes"] = true
         elv["chat"]["panelHeight"] = 249
+        elv["chat"]["panelHeightRight"] = 249
+        elv["chat"]["panelWidthRight"] = 501
         elv["movers"]["VehicleLeaveButton"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-421,254"
         elv["movers"]["TooltipMover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-2,254"
     end
 
     if (elvColor ~= nil) then
+        elvColor["chat"]["separateSizes"] = true
         elvColor["chat"]["panelHeight"] = 249
+        elvColor["chat"]["panelHeightRight"] = 249
+        elvColor["chat"]["panelWidthRight"] = 501
         elvColor["movers"]["VehicleLeaveButton"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-421,254"
         elvColor["movers"]["TooltipMover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-2,254"
     end
 
     if (elvHealer ~= nil) then
+        elvHealer["chat"]["separateSizes"] = true
         elvHealer["chat"]["panelHeight"] = 249
+        elvHealer["chat"]["panelHeightRight"] = 249
+        elvHealer["chat"]["panelWidthRight"] = 501
         elvHealer["movers"]["VehicleLeaveButton"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-421,254"
         elvHealer["movers"]["TooltipMover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-2,254"
     end
 
     if (elvHealerColor ~= nil) then
+        elvHealerColor["chat"]["separateSizes"] = true
         elvHealerColor["chat"]["panelHeight"] = 249
+        elvHealerColor["chat"]["panelHeightRight"] = 249
+        elvHealerColor["chat"]["panelWidthRight"] = 501
         elvHealerColor["movers"]["VehicleLeaveButton"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-421,254"
         elvHealerColor["movers"]["TooltipMover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-2,254"
     end
