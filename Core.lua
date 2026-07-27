@@ -13,22 +13,15 @@ function CJ:OnInitialize()
     local aspectRatio = sw / sh
     local defaults = {
         global = {
-            profiles = {
-                atrocityUI = "atrocityUI",
-                atrocityUIColor = "atrocityUI [C]",
-                atrocityUIHealer = "atrocityUI Healer",
-                atrocityUIHealerColor = "atrocityUI Healer [C]"
-            },
-            elvUi = {
-                disableBags = true,
+            euiProfile = "atrocityUI",
+            eui = {
                 primaryActionBars = true,
                 secondaryActionBars = true,
-                panels = true,
+                raidFrames = true,
+                damageMeters = true,
                 -- If aspect ratio is greater than 2.3, assume ultrawide, else standard. Set to true by default for ultrawide.
                 unitFrames = (aspectRatio > 2.3)
             }
-        },
-        profile = {
         }
     }
 
@@ -46,45 +39,53 @@ function CJ:OnInitialize()
                 type = "execute",
                 func = function () return CJ:ApplyTweaks() end
             },
-            elvUi = {
+            eui = {
                 order = 1,
-                name = "ElvUI Tweaks",
+                name = "EllesmereUI Tweaks",
                 type = "group",
                 args = {
+                    euiProfile = {
+                        order = 0,
+                        name = "Profile",
+                        desc = "The EllesmereUI profile to write tweaks into.",
+                        type = "input",
+                        get = function() return self.db.global.euiProfile end,
+                        set = function(_, val) self.db.global.euiProfile = val end
+                    },
                     primaryActionBars = {
                         name = "Primary Action Bars",
-                        desc = "Show primary action bars and move them to the center bottom of the screen.",
+                        desc = "Size the main bar, Bar5 and Bar6 and move them to the center bottom of the screen.",
                         type = "toggle",
-                        get = function() return self.db.global.elvUi.primaryActionBars end,
-                        set = function(_, val) self.db.global.elvUi.primaryActionBars = val end
+                        get = function() return self.db.global.eui.primaryActionBars end,
+                        set = function(_, val) self.db.global.eui.primaryActionBars = val end
                     },
                     secondaryActionBars = {
                         name = "Secondary Action Bars",
-                        desc = "Show secondary action bars and move them to the bottom left of the screen.",
+                        desc = "Size Bar3, Bar4 and the pet bar and move them to the bottom corners of the screen.",
                         type = "toggle",
-                        get = function() return self.db.global.elvUi.secondaryActionBars end,
-                        set = function(_, val) self.db.global.elvUi.secondaryActionBars = val end
+                        get = function() return self.db.global.eui.secondaryActionBars end,
+                        set = function(_, val) self.db.global.eui.secondaryActionBars = val end
                     },
-                    panels = {
-                        name = "Panels",
-                        desc = "Increase the size of the left and right panels.",
+                    raidFrames = {
+                        name = "Raid Frames",
+                        desc = "Show role icons for tanks and healers only.",
                         type = "toggle",
-                        get = function() return self.db.global.elvUi.panels end,
-                        set = function(_, val) self.db.global.elvUi.panels = val end
-                    },
-                    disableBags = {
-                        name = "Disable Bags",
-                        desc = "Disable ElvUI bag management so you can use another bag addon.",
-                        type = "toggle",
-                        get = function() return self.db.global.elvUi.disableBags end,
-                        set = function(_, val) self.db.global.elvUi.disableBags = val end
+                        get = function() return self.db.global.eui.raidFrames end,
+                        set = function(_, val) self.db.global.eui.raidFrames = val end
                     },
                     unitFrames = {
                         name = "Unit Frames",
-                        desc = "Tweak unit frames positions for ultrawide displays.",
+                        desc = "Tweak unit frame positions for ultrawide displays.",
                         type = "toggle",
-                        get = function() return self.db.global.elvUi.unitFrames end,
-                        set = function(_, val) self.db.global.elvUi.unitFrames = val end
+                        get = function() return self.db.global.eui.unitFrames end,
+                        set = function(_, val) self.db.global.eui.unitFrames = val end
+                    },
+                    damageMeters = {
+                        name = "Damage Meters",
+                        desc = "Size and position the damage meter windows.",
+                        type = "toggle",
+                        get = function() return self.db.global.eui.damageMeters end,
+                        set = function(_, val) self.db.global.eui.damageMeters = val end
                     }
                 }
             }
@@ -120,8 +121,9 @@ end
 function CJ:ApplyTweaks()
     local opts = self.db.global
 
-    CJ:ApplyElvUITweaks(opts)
-    CJ:ApplyDetailsTweaks(opts)
+    if not CJ:ApplyEllesmereUITweaks(opts) then
+        return
+    end
 
     -- TODO
     -- Pop up message to move quest log in edit mode after applying tweaks
