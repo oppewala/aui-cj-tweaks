@@ -21,7 +21,12 @@ function CJ:OnInitialize()
                 damageMeters = true,
                 -- If aspect ratio is greater than 2.3, assume ultrawide, else standard. Set to true by default for ultrawide.
                 unitFrames = (aspectRatio > 2.3)
-            }
+            },
+            chat = {
+                width = 500
+            },
+            -- Height of everything along the bottom of the screen.
+            bottomStripHeight = 245
         }
     }
 
@@ -88,6 +93,31 @@ function CJ:OnInitialize()
                         set = function(_, val) self.db.global.eui.damageMeters = val end
                     }
                 }
+            },
+            chat = {
+                order = 2,
+                name = "Bottom Strip",
+                type = "group",
+                args = {
+                    bottomStripHeight = {
+                        order = 0,
+                        name = "Height",
+                        desc = "Height of the whole bottom strip: chat panel, Bar4/Bar5, pet bar and the damage meter windows. Button sizes are derived from it.",
+                        type = "range",
+                        min = 100, max = 400, step = 1, bigStep = 5,
+                        get = function() return self.db.global.bottomStripHeight end,
+                        set = function(_, val) self.db.global.bottomStripHeight = math.floor(val) end
+                    },
+                    width = {
+                        order = 1,
+                        name = "Chat Panel Width",
+                        desc = "Width of the atrocityEssentials chat panel. Bar4 sits just right of it.",
+                        type = "range",
+                        min = 300, max = 900, step = 1, bigStep = 10,
+                        get = function() return self.db.global.chat.width end,
+                        set = function(_, val) self.db.global.chat.width = math.floor(val) end
+                    }
+                }
             }
         }
     }
@@ -121,6 +151,9 @@ end
 function CJ:ApplyTweaks()
     local opts = self.db.global
 
+    -- Before EllesmereUI: Bar4 is placed off the chat panel's right edge.
+    CJ:ApplyAtrocityEssentialsTweaks(opts)
+
     if not CJ:ApplyEllesmereUITweaks(opts) then
         return
     end
@@ -135,5 +168,7 @@ function CJ:ApplyTweaks()
     -- ApplyWeakAurasTweaks(opts)
     -- ApplyOmniCDTweaks(opts)
 
+    -- The meter and action bar modules read their profile at login, so the
+    -- writes above are invisible until this runs.
     ReloadUI()
 end

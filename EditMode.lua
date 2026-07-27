@@ -24,19 +24,20 @@ local BUFF_BLOCK_HEIGHT = 145
 -- Fallbacks assume the profile's own TOPRIGHT 1,1 inset and a ~200px cluster.
 local MINIMAP_SIZE_FALLBACK = 200
 
--- Left and top edges, in UIParent coordinates.
+-- Left, top and bottom edges, in UIParent coordinates.
 local function MinimapCorner()
     local mm = MinimapCluster or Minimap
-    local left, top = mm and mm:GetLeft(), mm and mm:GetTop()
-    if not left or not top then
+    local left, top, bottom = mm and mm:GetLeft(), mm and mm:GetTop(), mm and mm:GetBottom()
+    if not (left and top and bottom) then
         CJ:Print(("MinimapCorner: no live minimap, using fallback %d"):format(MINIMAP_SIZE_FALLBACK))
-        return UIParent:GetRight() - MINIMAP_SIZE_FALLBACK, UIParent:GetTop() - PAD
+        return UIParent:GetRight() - MINIMAP_SIZE_FALLBACK, UIParent:GetTop() - PAD,
+            UIParent:GetTop() - PAD - MINIMAP_SIZE_FALLBACK
     end
     local s = mm:GetEffectiveScale() / UIParent:GetEffectiveScale()
-    left, top = left * s, top * s
-    CJ:Print(("MinimapCorner: %s left %.1f top %.1f (UIParent %.1fx%.1f)")
-        :format(mm:GetName() or "?", left, top, UIParent:GetRight(), UIParent:GetTop()))
-    return left, top
+    left, top, bottom = left * s, top * s, bottom * s
+    CJ:Print(("MinimapCorner: %s left %.1f top %.1f bottom %.1f (UIParent %.1fx%.1f)")
+        :format(mm:GetName() or "?", left, top, bottom, UIParent:GetRight(), UIParent:GetTop()))
+    return left, top, bottom
 end
 
 -- Gap between an aura frame's right edge and where its icons actually end, in
@@ -55,37 +56,42 @@ end
 
 -- Read system/systemIndex off the live frame rather than naming Enum members --
 -- the frame is the same thing Edit Mode registered, so it cannot drift.
+local function FindSystem(layout, frame, name)
+    if not frame or frame.system == nil then
+        CJ:Print(("EditMode: %s is not an Edit Mode system, skipping."):format(name))
+        return nil
+    end
+    for _, sys in ipairs(layout.systems or {}) do
+        if sys.system == frame.system and sys.systemIndex == frame.systemIndex then
+            return sys
+        end
+    end
+    CJ:Print(("EditMode: %s has no entry in the active layout, skipping."):format(name))
+    return nil
+end
+
 -- Returns true only on an actual change: an unconditional SaveLayouts would
 -- demand a reload on every /cj apply.
 local function SetPos(layout, frame, name, point, relPoint, x, y)
-    if not frame or frame.system == nil then
-        CJ:Print(("EditMode: %s is not an Edit Mode system, skipping."):format(name))
+    local sys = FindSystem(layout, frame, name)
+    if not sys then return false end
+
+    local a = sys.anchorInfo or {}
+    sys.anchorInfo = a
+    if a.point == point and a.relativePoint == relPoint
+        and a.relativeTo == "UIParent"
+        and a.offsetX == x and a.offsetY == y
+        and sys.isInDefaultPosition == false then
         return false
     end
-
-    for _, sys in ipairs(layout.systems or {}) do
-        if sys.system == frame.system and sys.systemIndex == frame.systemIndex then
-            local a = sys.anchorInfo or {}
-            sys.anchorInfo = a
-            if a.point == point and a.relativePoint == relPoint
-                and a.relativeTo == "UIParent"
-                and a.offsetX == x and a.offsetY == y
-                and sys.isInDefaultPosition == false then
-                return false
-            end
-            CJ:Print(("EditMode %s: %s %.1f,%.1f -> %s %.1f,%.1f")
-                :format(name, a.point or "unset", a.offsetX or 0, a.offsetY or 0, point, x, y))
-            a.point, a.relativeTo, a.relativePoint = point, "UIParent", relPoint
-            a.offsetX, a.offsetY = x, y
-            -- Left true, Blizzard re-snaps the frame to its preset spot and
-            -- throws the offsets away.
-            sys.isInDefaultPosition = false
-            return true
-        end
-    end
-
-    CJ:Print(("EditMode: %s has no entry in the active layout, skipping."):format(name))
-    return false
+    CJ:Print(("EditMode %s: %s %.1f,%.1f -> %s %.1f,%.1f")
+        :format(name, a.point or "unset", a.offsetX or 0, a.offsetY or 0, point, x, y))
+    a.point, a.relativeTo, a.relativePoint = point, "UIParent", relPoint
+    a.offsetX, a.offsetY = x, y
+    -- Left true, Blizzard re-snaps the frame to its preset spot and
+    -- throws the offsets away.
+    sys.isInDefaultPosition = false
+    return true
 end
 
 -- Buffs' TOPRIGHT onto the minimap's TOPLEFT, so the block runs leftward off the
@@ -113,6 +119,16 @@ local function ConfigureAuras(layout)
     changed = SetPos(layout, DebuffFrame, "Debuffs", "TOPRIGHT", "TOPRIGHT",
         x + debuffInset, y - BUFF_BLOCK_HEIGHT - PAD * 2) or changed
     return changed
+end
+
+-- Tracker's TOPRIGHT to the screen's, dropped below the minimap. It grows
+-- downward from its anchor, so the top edge is the one that matters.
+local QUEST_GAP = 50
+
+local function ConfigureQuestTracker(layout)
+    local _, _, bottom = MinimapCorner()
+    return SetPos(layout, ObjectiveTrackerFrame, "Quest tracker", "TOPRIGHT", "TOPRIGHT",
+        -PAD, bottom - QUEST_GAP - UIParent:GetTop())
 end
 
 function CJ:ApplyEditModeTweaks()
@@ -147,7 +163,10 @@ function CJ:ApplyEditModeTweaks()
     local layout = info.layouts[info.activeLayout]
     if not layout or type(layout.systems) ~= "table" then return false end
 
-    if not ConfigureAuras(layout) then return false end
+    -- OR, not "or" -- both have to run.
+    local changed = ConfigureAuras(layout)
+    changed = ConfigureQuestTracker(layout) or changed
+    if not changed then return false end
 
     C_EditMode.SaveLayouts(info)
     CJ:Print("Edit Mode layout updated. Reload to apply -- Blizzard only reads it on login.")

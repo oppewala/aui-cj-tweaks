@@ -86,31 +86,43 @@ local function SetBarPos(profile, eab, key, x, y)
             x, y, uiW, uiH, base and "written" or "MISSING"))
 end
 
--- Chat is not a registered unlock element, so there is nothing to anchor a bar
--- to -- read the panel's width and place the bar beside it instead.
--- EllesmereUIChat stopped persisting chatWidth ("We no longer apply saved
--- width/height"), so the live frame is the only source. Runs at /cj apply time,
--- with the UI up, so it is there to read.
-local CHAT_WIDTH_FALLBACK = 400
+-- Everything along the bottom of the screen is opts.bottomStripHeight tall: the
+-- chat panel (sized in AtrocityEssentials.lua), Bar4/Bar5, the meter windows and
+-- the pet bar. It is a user option, so it arrives as a parameter rather than a
+-- constant -- the height is threaded through to every one of them below.
 
-local function ChatPanelWidth()
-    local w = ChatFrame1 and ChatFrame1:GetWidth()
-    if not w or w <= 1 then
-        CJ:Print(("ChatPanelWidth: ChatFrame1 width %s, using fallback %d")
-            :format(tostring(w), CHAT_WIDTH_FALLBACK))
-        return CHAT_WIDTH_FALLBACK
-    end
+-- Bar4 wants a touch more air off the chat panel than the 1px the bar grid uses.
+local CHAT_GAP = PAD + 1
 
-    local cS, uiS = ChatFrame1:GetEffectiveScale(), UIParent:GetEffectiveScale()
-    local scaled = w * cS / uiS
-    -- Left edge too: if the chat panel is not actually flush with the screen edge,
-    -- its width is the wrong number to offset by and this is what will show it.
-    local left = ChatFrame1:GetLeft()
-    CJ:Print(("ChatPanelWidth: raw %.1f, scale %.3f/%.3f -> %.1f | ChatFrame1 left %s, right %s")
-        :format(w, cS, uiS, scaled,
-            left and ("%.1f"):format(left * cS / uiS) or "nil",
-            ChatFrame1:GetRight() and ("%.1f"):format(ChatFrame1:GetRight() * cS / uiS) or "nil"))
-    return scaled
+-- Square buttons that fill the strip: rows of them plus the gaps between. The
+-- alternative -- stretching icons to hit the height -- is visible on every
+-- single button, so the height drives the button size instead.
+--
+-- This is EllesmereUI's own match-height math (EUI_ActionBars_Options.lua's
+-- setHeight handler), and it has to be, because rows almost never divide a
+-- height evenly. LayoutBar locks button size and padding to whole PHYSICAL
+-- pixels, so asking for 39.1667 gets you 39 and a block two pixels short -- the
+-- step the chat panel showed against the bars. Floor to a whole pixel and give
+-- the remainder to _matchExtraPixelsH, which LayoutBar adds back into the frame
+-- height, and the block lands exactly on the target.
+--
+-- ponytail: no buttonShape handling (the option's own version expands/crops the
+-- button first). These bars are shape "none"; if one ever isn't, copy that arm.
+local function MatchBarHeight(bar, height, rows)
+    local onePx = (EllesmereUI and EllesmereUI.PP and EllesmereUI.PP.mult) or 1
+    local physTarget = math.floor(height / onePx + 0.5)
+    local physPad = math.floor((bar.buttonPadding or 2) / onePx + 0.5)
+    local physBtn = math.floor((physTarget - (rows - 1) * physPad) / rows)
+    if physBtn < 8 then physBtn = 8 end
+
+    bar.buttonWidth = physBtn * onePx
+    bar.buttonHeight = bar.buttonWidth
+
+    -- One spare pixel per row is all LayoutBar will distribute; more than that
+    -- means the height is unreachable and the block stays a little short.
+    local extra = physTarget - (rows * physBtn + (rows - 1) * physPad)
+    bar._matchExtraPixelsH = (extra > 0 and extra <= rows) and extra or nil
+    return bar.buttonWidth, bar._matchExtraPixelsH or 0, onePx
 end
 
 -- Same wipe-and-refill problem for grow directions: baselineLayout.abGrow is
@@ -149,7 +161,7 @@ end
 --   Bar5 should be anchored to the right of Bar4
 --   Bar4 sits in the bottom-left corner, 1px up and one chat-panel-width in
 -- Right Cluster: Pet Bar (anchored to the left of the Damage Done window, ideally with 1 pixel padding)
-local function ConfigureSecondaryActionBars(profile)
+local function ConfigureSecondaryActionBars(profile, chatWidth, stripHeight)
     local eab = AddonDB(profile, "EllesmereUIActionBars")
     eab.bars = eab.bars or {}
 
@@ -157,11 +169,13 @@ local function ConfigureSecondaryActionBars(profile)
     local bar5 = Bar(eab.bars, "Bar5")
 
     -- The two sit edge to edge as one block, so their buttons have to be the
-    -- same size.
-    bar5.buttonWidth, bar5.buttonHeight = bar4.buttonWidth, bar4.buttonHeight
-    bar5.buttonPadding = bar4.buttonPadding
+    -- same size -- and that size is whatever makes 6 rows fill the strip.
+    local pad = bar4.buttonPadding or PAD
+    local btn, extra
 
     for _, bar in ipairs({ bar4, bar5 }) do
+        bar.buttonPadding = pad
+        btn, extra = MatchBarHeight(bar, stripHeight, 6)
         bar.orientation = "vertical"
         bar.overrideNumIcons = 12
         -- On a vertical bar overrideNumRows is the COLUMN count (see the layout
@@ -187,17 +201,14 @@ local function ConfigureSecondaryActionBars(profile)
     -- via its anchor. growDirection is "center", so the stored point is the bar's
     -- centre and the corner has to be converted to one -- derive the frame size
     -- from the 2x6 grid set above rather than reading the live frame, which has
-    -- not been re-laid-out yet. Re-run /cj apply after a button size change.
-    local btnW = (bar4.buttonWidth or 0) > 0 and bar4.buttonWidth or 45
-    local btnH = (bar4.buttonHeight or 0) > 0 and bar4.buttonHeight or 45
-    local pad = bar4.buttonPadding or 2
-    local barW, barH = 2 * btnW + pad, 6 * btnH + 5 * pad
+    -- not been re-laid-out yet.
+    local barW, barH = 2 * btn + pad, stripHeight
     local uiW, uiH = UIParent:GetSize()
     -- The third term in the sum, and the one SetBarPos cannot see.
-    CJ:Print(("Bar4 grid: btn %.1fx%.1f pad %.1f -> frame %.1fx%.1f")
-        :format(btnW, btnH, pad, barW, barH))
+    CJ:Print(("Bar4/Bar5: 6 rows pad %.1f -> btn %.1f +%d spare px, frame %.1fx%.1f")
+        :format(pad, btn, extra, barW, barH))
     SetBarPos(profile, eab, "Bar4",
-        -uiW / 2 + ChatPanelWidth() + PAD + barW / 2,
+        -uiW / 2 + CJ:ChatPanelRight(chatWidth) + CHAT_GAP + barW / 2,
         -uiH / 2 + PAD + barH / 2)
 
     SetAnchor(profile, "Bar5", "Bar4", "RIGHT", PAD, 0)
@@ -207,6 +218,18 @@ local function ConfigureSecondaryActionBars(profile)
     -- if EllesmereUIDamageMeters is ever disabled this target goes missing and the
     -- pet bar falls back to its stale barPositions entry.
     SetAnchor(profile, "PetBar", "EDM_Win2", "LEFT", -PAD, 0)
+
+    -- Same block height as the chat panel and the meters, so the whole bottom
+    -- strip reads as one band.
+    local pet = Bar(eab.bars, "PetBar")
+    -- On a vertical bar overrideNumRows is the COLUMN count (same quirk as Bar4
+    -- above), so the row count is icons over columns.
+    local petRows = (pet.orientation == "vertical")
+        and math.ceil((pet.overrideNumIcons or 10) / (pet.overrideNumRows or 2))
+        or (pet.overrideNumRows or 1)
+    local petBtn, petExtra = MatchBarHeight(pet, stripHeight, petRows)
+    CJ:Print(("PetBar: %d rows pad %.1f -> btn %.1f +%d spare px (strip %d tall)")
+        :format(petRows, pet.buttonPadding or PAD, petBtn, petExtra, stripHeight))
 end
 
 -- Container's TOPLEFT 1px in from UIParent's. RF reads unlockPos through
@@ -222,6 +245,24 @@ local function SetElemPos(layer, key, pos)
     local e = layer and layer.elems and layer.elems[key]
     if not e then return end
     e.point, e.relPoint, e.x, e.y = pos.point, pos.relPoint, pos.x, pos.y
+end
+
+-- ...and the size, for the elements whose owning module does NOT get the last
+-- word on it. An elems entry carries w/h alongside x/y, and the unlock layer
+-- pushes both back through the element's setWidth/setHeight on every flush --
+-- which for the damage meter windows overwrites dm.windows[i].width/height with
+-- whatever was last harvested. Two stores, same reason as SetAnchor: the live
+-- one, and the baseline the layer flush refills from.
+local function SetElemSize(profile, key, w, h)
+    local base = profile.specUnlockOverrides and profile.specUnlockOverrides.baselineLayout
+    for _, store in ipairs({ profile.unlockLayout or {}, base or {} }) do
+        local e = store.elems and store.elems[key]
+        if e then
+            CJ:Print(("SetElemSize %s: %.1fx%.1f -> %.1fx%.1f")
+                :format(key, e.w or 0, e.h or 0, w, h))
+            e.w, e.h = w, h
+        end
+    end
 end
 
 -- ElvUI's raid1/2/3 roleIcon.enable + roleIcon.damager = false. EllesmereUI has a
@@ -256,6 +297,43 @@ local function ConfigureMinimap(profile)
         "EBS_Minimap", MINIMAP_TOPRIGHT)
 end
 
+-- Dark Mode is not one stored flag: each module keeps its own in its own shape
+-- (UF darkTheme, RB secondary.darkTheme, RF healthColorMode == "dark"), and
+-- EllesmereUI's master checkbox only flips the LIVE module DBs. We edit a profile
+-- table that may not even be loaded, so write the three directly -- same values
+-- each provider's setOn(false) writes.
+--
+-- The health bars in this profile were dark because of per-unit customFillColor
+-- (0.03 grey), NOT Dark Mode, which was already off. healthClassColored is the
+-- unit's "class coloured" toggle and takes priority over customFillColor, so the
+-- custom colour stays parked in the profile instead of being deleted.
+-- boss is excluded: it never class-colours (no player class on a boss).
+local CLASS_COLOURED_UNITS = { "player", "target", "pet", "focus", "focustarget", "targettarget" }
+
+local function ConfigureClassColours(profile)
+    local euf = AddonDB(profile, "EllesmereUIUnitFrames")
+    euf.darkTheme = false
+    for _, unit in ipairs(CLASS_COLOURED_UNITS) do
+        euf[unit] = euf[unit] or {}
+        euf[unit].healthClassColored = true
+    end
+
+    local erb = AddonDB(profile, "EllesmereUIResourceBars")
+    erb.secondary = erb.secondary or {}
+    erb.secondary.darkTheme = false
+
+    -- _darkPrev* is where the module stashed the pre-dark mode; prefer it, then
+    -- clear it exactly as setOn(false) does.
+    local erf = AddonDB(profile, "EllesmereUIRaidFrames")
+    if erf.healthColorMode == "dark" then
+        erf.healthColorMode = erf._darkPrevHealthColorMode or "class"
+    end
+    if erf.party_healthColorMode == "dark" then
+        erf.party_healthColorMode = erf._darkPrevPartyHealthColorMode or "class"
+    end
+    erf._darkPrevHealthColorMode, erf._darkPrevPartyHealthColorMode = nil, nil
+end
+
 -- Ultrawide pull-in. ElvUI used absolute corner-anchored mover strings; these are
 -- CENTER-relative offsets, so the ultrawide/standard split is just the numbers.
 local function ConfigureUnitFrames(profile)
@@ -274,7 +352,7 @@ end
 
 -- Replaces the old Details tweaks. EllesmereUI ships its own meter, so there is no
 -- profile to apply/save around the edit -- windows is a plain array indexed 1..windowCount.
-local function ConfigureDamageMeters(profile)
+local function ConfigureDamageMeters(profile, stripHeight)
     local edm = AddonDB(profile, "EllesmereUIDamageMeters")
     edm.dm = edm.dm or {}
     local dm = edm.dm
@@ -285,12 +363,13 @@ local function ConfigureDamageMeters(profile)
 
     -- Window 1 is Healing Done (curDMType 2), window 2 is Damage Done (curDMType 0).
     -- Details' third (deaths) window has no counterpart here.
-    local WIDTH, HEIGHT, EDGE = 202, 204, 1
+    -- Height matches the chat panel so the bottom strip lines up across the screen.
+    local WIDTH, EDGE = 202, 1
 
     for i = 1, dm.windowCount do
         local w = dm.windows[i] or {}
         w.width = WIDTH
-        w.height = HEIGHT
+        w.height = stripHeight
         w.locked = true
         w.hideTimer = true
         dm.windows[i] = w
@@ -304,6 +383,11 @@ local function ConfigureDamageMeters(profile)
     -- but zero it so a stale coordinate can't show through if the anchor is dropped.
     dm.windows[2].position = { point = "CENTER", relPoint = "CENTER", x = 0, y = 0 }
     SetAnchor(profile, "EDM_Win2", "EDM_Win1", "LEFT")
+
+    -- The size above is only half the job -- the unlock layer holds its own copy
+    -- and wins. MatchSpecLayoutsToBase carries both keys into the spec forks.
+    SetElemSize(profile, "EDM_Win1", WIDTH, stripHeight)
+    SetElemSize(profile, "EDM_Win2", WIDTH, stripHeight)
 end
 
 -- A spec override group owns a COMPLETE fork of the unlock layout
@@ -390,29 +474,27 @@ function CJ:ApplyEllesmereUITweaks(opts)
     -- TODO
     -- --== EllesmereUI ==--
     -- Damage and Healing Meters can be wider
-    -- Swap to class colours
     -- Role Icons to be 'modern light'
-    -- Bar4 slightly too far to the left, hieght doesn't match chat panel
-
+    --
     -- --== EditMode ==--
     -- Encounter bar ~10px above Action Bar 3. Not doable from here: EAB's
     --   SetupBlizzardMovableFrames explicitly no-ops for EncounterBar ("let
     --   Blizzard own position entirely"), so it has no barPositions entry and no
     --   unlock key. Edit Mode is the only handle.
-    -- Move the quest log to the right side of the screen
-    -- Move buffs/debuffs to the right side of the screen (next to minimap)
-    -- Increase the height/width of the chat panel
 
     local eab = AddonDB(profile, "EllesmereUIActionBars")
     if opts.eui.primaryActionBars then ConfigurePrimaryActionBars(profile) end
-    if opts.eui.secondaryActionBars then ConfigureSecondaryActionBars(profile) end
+    if opts.eui.secondaryActionBars then
+        ConfigureSecondaryActionBars(profile, opts.chat.width, opts.bottomStripHeight)
+    end
     SyncGrowToBaseline(profile, eab)
     if opts.eui.raidFrames then ConfigureRaidFrames(profile) end
     -- ponytail: no opts.eui.minimap toggle -- nobody asked for one. Add it to
     -- Core.lua's options table if turning this off ever matters.
     ConfigureMinimap(profile)
+    ConfigureClassColours(profile)
     --if opts.eui.unitFrames then ConfigureUnitFrames(profile) end
-    if opts.eui.damageMeters then ConfigureDamageMeters(profile) end
+    if opts.eui.damageMeters then ConfigureDamageMeters(profile, opts.bottomStripHeight) end
     MatchSpecLayoutsToBase(profile)
 
     return true
