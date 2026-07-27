@@ -54,14 +54,14 @@ function CJ:OnInitialize()
                     },
                     primaryActionBars = {
                         name = "Primary Action Bars",
-                        desc = "Size the main bar, Bar5 and Bar6 and move them to the center bottom of the screen.",
+                        desc = "Stack Bar2 and Bar3 above the main bar, matching its settings.",
                         type = "toggle",
                         get = function() return self.db.global.eui.primaryActionBars end,
                         set = function(_, val) self.db.global.eui.primaryActionBars = val end
                     },
                     secondaryActionBars = {
                         name = "Secondary Action Bars",
-                        desc = "Size Bar3, Bar4 and the pet bar and move them to the bottom corners of the screen.",
+                        desc = "Make Bar4 and Bar5 a 2x6 cluster beside the chat panel, and hang the pet bar off the damage meter.",
                         type = "toggle",
                         get = function() return self.db.global.eui.secondaryActionBars end,
                         set = function(_, val) self.db.global.eui.secondaryActionBars = val end
@@ -133,5 +133,5 @@ function CJ:ApplyTweaks()
     -- ApplyWeakAurasTweaks(opts)
     -- ApplyOmniCDTweaks(opts)
 
-    ReloadUI()
+    -- ReloadUI()
 end
