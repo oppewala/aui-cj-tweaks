@@ -27,13 +27,6 @@ local function Bar(bars, name)
     return bars[name]
 end
 
--- CENTER-relative x/y in EllesmereUI's coordinate space, which tracks
--- EllesmereUIDB.ppUIScale. Every call below is seeded from a working layout and
--- hand-tuned from there -- there is nothing to derive these from.
-local function SetPos(positions, name, x, y)
-    positions[name] = { point = "CENTER", relPoint = "CENTER", x = x, y = y }
-end
-
 -- Gap between two elements that sit edge to edge. Matches the profile's
 -- buttonPadding, so a bar stack reads as one grid.
 local PAD = 1
@@ -59,34 +52,6 @@ local function SetAnchor(profile, key, target, side, offsetX, offsetY)
         store.anchors[key] = DeepCopy(anchor)
     end
 end
-
--- barPositions carry the same convention as SetPos -- x/y are offsets from
--- UIParent's CENTER, and point names which edge of the bar frame is pinned there.
--- The baseline's copy lives under abPos rather than alongside the anchors.
-local function SetBarPos(profile, eab, key, x, y)
-    eab.barPositions = eab.barPositions or {}
-    local old = eab.barPositions[key]
-    SetPos(eab.barPositions, key, x, y)
-    local base = Baseline(profile)
-    if base then
-        base.abPos = base.abPos or {}
-        SetPos(base.abPos, key, x, y)
-    end
-
-    local uiW, uiH = UIParent:GetSize()
-    CJ:Debug("SetBarPos %s: %s -> CENTER %.1f,%.1f | UIParent %.1fx%.1f | baseline abPos %s",
-        key,
-        old and ("%s %.1f,%.1f"):format(old.point or "?", old.x or 0, old.y or 0) or "unset",
-        x, y, uiW, uiH, base and "written" or "MISSING")
-end
-
--- Everything along the bottom of the screen is opts.bottomStripHeight tall: the
--- chat panel (sized in AtrocityEssentials.lua), Bar4/Bar5, the meter windows and
--- the pet bar. It is a user option, so it arrives as a parameter rather than a
--- constant -- the height is threaded through to every one of them below.
-
--- Bar4 wants a touch more air off the chat panel than the 1px the bar grid uses.
-local CHAT_GAP = PAD + 1
 
 -- Square buttons that fill the strip: rows of them plus the gaps between. The
 -- alternative -- stretching icons to hit the height -- is visible on every
@@ -117,6 +82,26 @@ local function MatchBarHeight(bar, height, rows)
     local extra = physTarget - (rows * physBtn + (rows - 1) * physPad)
     bar._matchExtraPixelsH = (extra > 0 and extra <= rows) and extra or nil
     return bar.buttonWidth, bar._matchExtraPixelsH or 0
+end
+
+-- How many rows the bar will actually stack into its height -- ComputeBarLayout's
+-- own math (EllesmereUIActionBars.lua), which has three traps worth copying
+-- rather than eyeballing:
+--   * the icon count is a three-step fallback, and cap is a hard ceiling. The
+--     shared bar defaults carry numIcons = 12 while the pet bar's own cap is 10,
+--     so trusting the stored number gives a 2x6 grid for a bar that lays out 2x5.
+--   * stride, not the stored row count, is what stacks on a vertical bar (the
+--     stored number is the COLUMN count there).
+--   * an uneven split collapses: 10 icons in 3 columns is stride 4, which is
+--     really 3 columns of 4-4-2, so the height is 4 rows and not 3.
+local function BarRows(s, cap)
+    local icons = s.overrideNumIcons or s.numIcons or cap
+    if icons < 1 or icons > cap then icons = cap end
+    local rows = s.overrideNumRows or s.numRows or 1
+    if rows < 1 then rows = 1 end
+    local stride = math.ceil(icons / rows)
+    if s.orientation == "vertical" then return stride, icons end
+    return math.ceil(icons / stride), icons
 end
 
 -- Grow directions have no setter of their own, so mirror whatever the bar
@@ -150,34 +135,30 @@ local function ConfigurePrimaryActionBars(profile)
 end
 
 -- Left Cluster (left to right): Bar4, Bar5
---   Each bar should be 2 icons wide (2x6 = 12 icons total)
---   Bar5 should be anchored to the right of Bar4
---   Bar4 sits in the bottom-left corner, 1px up and one chat-panel-width in
+--   EllesmereUI's ultrawide support places and sizes Bar4 itself now, so Bar5 is
+--   cloned off it -- same grid, same button size -- and hung off its right edge.
 -- Right Cluster: Pet Bar (anchored to the left of the Damage Done window, ideally with 1 pixel padding)
-local function ConfigureSecondaryActionBars(profile, chatWidth, stripHeight)
+-- Height of the window the pet bar hangs off. The unlock layer's elems entry
+-- wins whenever it exists -- every flush pushes its w/h back through the
+-- window's setWidth/setHeight, overwriting dm.windows[i] -- so read that first
+-- and fall back to the meter module's own store.
+local function MeterHeight(profile, key, index)
+    local elems = profile.unlockLayout and profile.unlockLayout.elems
+    local e = elems and elems[key]
+    if e and e.h then return e.h end
+    local edm = profile.addons and profile.addons.EllesmereUIDamageMeters
+    local win = edm and edm.dm and edm.dm.windows and edm.dm.windows[index]
+    return win and win.height
+end
+
+local function ConfigureSecondaryActionBars(profile)
     local eab = AddonDB(profile, "EllesmereUIActionBars")
     eab.bars = eab.bars or {}
 
     local bar4 = Bar(eab.bars, "Bar4")
-    local bar5 = Bar(eab.bars, "Bar5")
+    eab.bars.Bar5 = DeepCopy(bar4)
 
-    -- The two sit edge to edge as one block, so their buttons have to be the
-    -- same size -- and that size is whatever makes 6 rows fill the strip. Same
-    -- padding and row count in, so both come back with the same button size.
-    local pad = bar4.buttonPadding or PAD
-
-    for _, bar in ipairs({ bar4, bar5 }) do
-        bar.buttonPadding = pad
-        MatchBarHeight(bar, stripHeight, 6)
-        bar.orientation = "vertical"
-        bar.overrideNumIcons = 12
-        -- On a vertical bar overrideNumRows is the COLUMN count (see the layout
-        -- loop's isVertical branch), so 2 is the 2-wide x 6-tall block.
-        bar.overrideNumRows = 2
-        -- The WIDTH-match spare, which adds a pixel to the leading columns. Both
-        -- bars have to come out the same width, so neither may carry it.
-        bar._matchExtraPixels = nil
-
+    for _, bar in ipairs({ bar4, eab.bars.Bar5 }) do
         -- Always visible. Mouseover mode parks mouseoverAlpha at 0 and stashes
         -- the real alpha in _savedBarAlpha, so clearing the mode alone would
         -- leave the bar shown but fully transparent -- undo the stash too
@@ -189,21 +170,6 @@ local function ConfigureSecondaryActionBars(profile, chatWidth, stripHeight)
         bar._savedBarAlpha = nil
     end
 
-    -- Bar4 into the bottom-left corner, clear of the chat panel; Bar5 rides along
-    -- via its anchor. growDirection is "center", so the stored point is the bar's
-    -- centre and the corner has to be converted to one -- derive the frame size
-    -- from the 2x6 grid set above rather than reading the live frame, which has
-    -- not been re-laid-out yet.
-    local btn, extra = bar4.buttonWidth, bar4._matchExtraPixelsH or 0
-    local barW, barH = 2 * btn + pad, stripHeight
-    local uiW, uiH = UIParent:GetSize()
-    -- The third term in the sum, and the one SetBarPos cannot see.
-    CJ:Debug("Bar4/Bar5: 6 rows pad %.1f -> btn %.1f +%d spare px, frame %.1fx%.1f",
-        pad, btn, extra, barW, barH)
-    SetBarPos(profile, eab, "Bar4",
-        -uiW / 2 + CJ:ChatPanelRight(chatWidth) + CHAT_GAP + barW / 2,
-        -uiH / 2 + PAD + barH / 2)
-
     SetAnchor(profile, "Bar5", "Bar4", "RIGHT", PAD, 0)
 
     -- Pet bar rides the left edge of the Damage Done window, so the meters and the
@@ -212,17 +178,20 @@ local function ConfigureSecondaryActionBars(profile, chatWidth, stripHeight)
     -- pet bar falls back to its stale barPositions entry.
     SetAnchor(profile, "PetBar", "EDM_Win2", "LEFT", -PAD, 0)
 
-    -- Same block height as the chat panel and the meters, so the whole bottom
-    -- strip reads as one band.
+    -- ...and matches its height, so the two read as one block. No height stored
+    -- for the window means it has never been sized or dragged; leave the pet bar
+    -- alone rather than guessing.
+    local meterH = MeterHeight(profile, "EDM_Win2", 2)
+    if not meterH then
+        CJ:Print("No stored height for the Damage Done window, leaving the pet bar height alone.")
+        return
+    end
+
     local pet = Bar(eab.bars, "PetBar")
-    -- On a vertical bar overrideNumRows is the COLUMN count (same quirk as Bar4
-    -- above), so the row count is icons over columns.
-    local petRows = (pet.orientation == "vertical")
-        and math.ceil((pet.overrideNumIcons or 10) / (pet.overrideNumRows or 2))
-        or (pet.overrideNumRows or 1)
-    local petBtn, petExtra = MatchBarHeight(pet, stripHeight, petRows)
-    CJ:Debug("PetBar: %d rows pad %.1f -> btn %.1f +%d spare px (strip %d tall)",
-        petRows, pet.buttonPadding or PAD, petBtn, petExtra, stripHeight)
+    local petRows, petIcons = BarRows(pet, NUM_PET_ACTION_SLOTS or 10)
+    local petBtn, petExtra = MatchBarHeight(pet, meterH, petRows)
+    CJ:Debug("PetBar: %d icons in %d rows, pad %.1f -> btn %.1f +%d spare px (EDM_Win2 %.1f tall)",
+        petIcons, petRows, pet.buttonPadding or PAD, petBtn, petExtra, meterH)
 end
 
 -- Container's TOPLEFT 1px in from UIParent's. RF reads unlockPos through
@@ -270,18 +239,6 @@ local function ConfigureRaidFrames(profile)
     SetElemPos(Baseline(profile), "RF_RaidFrames", RAID_TOPLEFT)
 end
 
--- Minimap 1px in from the top right. Same shape as unlockPos and read the same
--- way (SetPoint straight onto UIParent), and TOPRIGHT is already the module's own
--- no-position fallback, so no CENTER conversion here either.
-local MINIMAP_TOPRIGHT = { point = "TOPRIGHT", relPoint = "TOPRIGHT", x = -1, y = -1 }
-
-local function ConfigureMinimap(profile)
-    local emm = AddonDB(profile, "EllesmereUIMinimap")
-    emm.minimap = emm.minimap or {}
-    emm.minimap.position = DeepCopy(MINIMAP_TOPRIGHT)
-    SetElemPos(Baseline(profile), "EBS_Minimap", MINIMAP_TOPRIGHT)
-end
-
 -- Dark Mode is not one stored flag: each module keeps its own in its own shape
 -- (UF darkTheme, RB secondary.darkTheme, RF healthColorMode == "dark"), and
 -- EllesmereUI's master checkbox only flips the LIVE module DBs. We edit a profile
@@ -317,9 +274,11 @@ local function ConfigureClassColours(profile)
     erf._darkPrevHealthColorMode, erf._darkPrevPartyHealthColorMode = nil, nil
 end
 
+local METER_WIDTH, METER_HEIGHT = 250, 263
+
 -- windows is a plain array indexed 1..windowCount -- no profile to apply/save
 -- around the edit.
-local function ConfigureDamageMeters(profile, stripHeight, combinedWidth)
+local function ConfigureDamageMeters(profile)
     local edm = AddonDB(profile, "EllesmereUIDamageMeters")
     edm.dm = edm.dm or {}
     local dm = edm.dm
@@ -329,15 +288,12 @@ local function ConfigureDamageMeters(profile, stripHeight, combinedWidth)
     dm.windows = dm.windows or {}
 
     -- Window 1 is Healing Done (curDMType 2), window 2 is Damage Done (curDMType 0).
-    -- Height matches the chat panel so the bottom strip lines up across the screen.
-    -- The two windows sit edge to edge (EDM_Win2's LEFT anchor has no offset), so
-    -- the combined width is just split in half.
-    local WIDTH, EDGE = math.floor(combinedWidth / 2), 1
+    local EDGE = 1
 
     for i = 1, dm.windowCount do
         local w = dm.windows[i] or {}
-        w.width = WIDTH
-        w.height = stripHeight
+        w.width = METER_WIDTH
+        w.height = METER_HEIGHT
         w.locked = true
         w.hideTimer = true
         dm.windows[i] = w
@@ -354,8 +310,8 @@ local function ConfigureDamageMeters(profile, stripHeight, combinedWidth)
 
     -- The size above is only half the job -- the unlock layer holds its own copy
     -- and wins. MatchSpecLayoutsToBase carries both keys into the spec forks.
-    SetElemSize(profile, "EDM_Win1", WIDTH, stripHeight)
-    SetElemSize(profile, "EDM_Win2", WIDTH, stripHeight)
+    SetElemSize(profile, "EDM_Win1", METER_WIDTH, METER_HEIGHT)
+    SetElemSize(profile, "EDM_Win2", METER_WIDTH, METER_HEIGHT)
 end
 
 -- A spec override group owns a COMPLETE fork of the unlock layout
@@ -441,18 +397,12 @@ function CJ:ApplyEllesmereUITweaks(opts)
 
     local eab = AddonDB(profile, "EllesmereUIActionBars")
     if opts.eui.primaryActionBars then ConfigurePrimaryActionBars(profile) end
-    if opts.eui.secondaryActionBars then
-        ConfigureSecondaryActionBars(profile, opts.chat.width, opts.bottomStripHeight)
-    end
+    -- Before the pet bar, which sizes itself off the meter window's height.
+    if opts.eui.damageMeters then ConfigureDamageMeters(profile) end
+    if opts.eui.secondaryActionBars then ConfigureSecondaryActionBars(profile) end
     SyncGrowToBaseline(profile, eab)
     if opts.eui.raidFrames then ConfigureRaidFrames(profile) end
-    -- ponytail: no opts.eui.minimap toggle -- nobody asked for one. Add it to
-    -- Core.lua's options table if turning this off ever matters.
-    ConfigureMinimap(profile)
     ConfigureClassColours(profile)
-    if opts.eui.damageMeters then
-        ConfigureDamageMeters(profile, opts.bottomStripHeight, opts.meterWidth)
-    end
     MatchSpecLayoutsToBase(profile)
 
     return true

@@ -15,14 +15,6 @@ local defaults = {
             raidFrames = true,
             damageMeters = true
         },
-        chat = {
-            width = 500
-        },
-        -- Height of everything along the bottom of the screen.
-        bottomStripHeight = 220,
-        -- Damage + healing meter windows, combined. They sit edge to edge, so
-        -- each window is half of this.
-        meterWidth = 404,
         debug = false
     }
 }
@@ -61,7 +53,7 @@ local options = {
                 },
                 secondaryActionBars = {
                     name = "Secondary Action Bars",
-                    desc = "Make Bar4 and Bar5 a 2x6 cluster beside the chat panel, and hang the pet bar off the damage meter.",
+                    desc = "Show Bar4/Bar5 always with Bar5 beside Bar4, and match the pet bar height to the Damage Done window.",
                     type = "toggle",
                     get = function() return CJ.db.global.eui.secondaryActionBars end,
                     set = function(_, val) CJ.db.global.eui.secondaryActionBars = val end
@@ -79,40 +71,6 @@ local options = {
                     type = "toggle",
                     get = function() return CJ.db.global.eui.damageMeters end,
                     set = function(_, val) CJ.db.global.eui.damageMeters = val end
-                }
-            }
-        },
-        chat = {
-            order = 2,
-            name = "Bottom Strip",
-            type = "group",
-            args = {
-                bottomStripHeight = {
-                    order = 0,
-                    name = "Height",
-                    desc = "Height of the whole bottom strip: chat panel, Bar4/Bar5, pet bar and the damage meter windows. Button sizes are derived from it.",
-                    type = "range",
-                    min = 100, max = 400, step = 1, bigStep = 5,
-                    get = function() return CJ.db.global.bottomStripHeight end,
-                    set = function(_, val) CJ.db.global.bottomStripHeight = math.floor(val) end
-                },
-                meterWidth = {
-                    order = 1,
-                    name = "Meter Width (combined)",
-                    desc = "Total width of the damage and healing meter windows together. They sit edge to edge, so each gets half.",
-                    type = "range",
-                    min = 200, max = 1200, step = 2, bigStep = 20,
-                    get = function() return CJ.db.global.meterWidth end,
-                    set = function(_, val) CJ.db.global.meterWidth = math.floor(val) end
-                },
-                width = {
-                    order = 2,
-                    name = "Chat Panel Width",
-                    desc = "Width of the atrocityEssentials chat panel. Bar4 sits just right of it.",
-                    type = "range",
-                    min = 300, max = 900, step = 1, bigStep = 10,
-                    get = function() return CJ.db.global.chat.width end,
-                    set = function(_, val) CJ.db.global.chat.width = math.floor(val) end
                 }
             }
         },
@@ -162,14 +120,11 @@ end
 function CJ:ApplyTweaks()
     local opts = self.db.global
 
-    -- Before EllesmereUI: Bar4 is placed off the chat panel's right edge.
-    CJ:ApplyAtrocityEssentialsTweaks(opts)
+    CJ:ApplyAtrocityEssentialsTweaks()
 
     if not CJ:ApplyEllesmereUITweaks(opts) then
         return
     end
-
-    CJ:ApplyEditModeTweaks()
 
     if opts.debug then
         CJ:Print("Debug mode: skipping the reload. /reload when you are done reading.")
