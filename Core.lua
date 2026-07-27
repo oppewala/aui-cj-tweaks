@@ -26,7 +26,10 @@ function CJ:OnInitialize()
                 width = 500
             },
             -- Height of everything along the bottom of the screen.
-            bottomStripHeight = 245
+            bottomStripHeight = 220,
+            -- Damage + healing meter windows, combined. They sit edge to edge, so
+            -- each window is half of this.
+            meterWidth = 404
         }
     }
 
@@ -108,8 +111,17 @@ function CJ:OnInitialize()
                         get = function() return self.db.global.bottomStripHeight end,
                         set = function(_, val) self.db.global.bottomStripHeight = math.floor(val) end
                     },
-                    width = {
+                    meterWidth = {
                         order = 1,
+                        name = "Meter Width (combined)",
+                        desc = "Total width of the damage and healing meter windows together. They sit edge to edge, so each gets half.",
+                        type = "range",
+                        min = 200, max = 1200, step = 2, bigStep = 20,
+                        get = function() return self.db.global.meterWidth end,
+                        set = function(_, val) self.db.global.meterWidth = math.floor(val) end
+                    },
+                    width = {
+                        order = 2,
                         name = "Chat Panel Width",
                         desc = "Width of the atrocityEssentials chat panel. Bar4 sits just right of it.",
                         type = "range",

@@ -270,9 +270,8 @@ end
 -- "enabled" as any roleIconStyle other than "none".
 local function ConfigureRaidFrames(profile)
     local erf = AddonDB(profile, "EllesmereUIRaidFrames")
-    if (erf.roleIconStyle or "modern") == "none" then
-        erf.roleIconStyle = "modern"
-    end
+    -- "Modern Light" in the UI; the stored key stayed blizzLight for back-compat.
+    erf.roleIconStyle = "blizzLight"
     erf.showRoleForDPS = false
 
     -- Two writes for one position: unlockPos is the live module store, but a
@@ -352,7 +351,7 @@ end
 
 -- Replaces the old Details tweaks. EllesmereUI ships its own meter, so there is no
 -- profile to apply/save around the edit -- windows is a plain array indexed 1..windowCount.
-local function ConfigureDamageMeters(profile, stripHeight)
+local function ConfigureDamageMeters(profile, stripHeight, combinedWidth)
     local edm = AddonDB(profile, "EllesmereUIDamageMeters")
     edm.dm = edm.dm or {}
     local dm = edm.dm
@@ -364,7 +363,9 @@ local function ConfigureDamageMeters(profile, stripHeight)
     -- Window 1 is Healing Done (curDMType 2), window 2 is Damage Done (curDMType 0).
     -- Details' third (deaths) window has no counterpart here.
     -- Height matches the chat panel so the bottom strip lines up across the screen.
-    local WIDTH, EDGE = 202, 1
+    -- The two windows sit edge to edge (EDM_Win2's LEFT anchor has no offset), so
+    -- the combined width is just split in half.
+    local WIDTH, EDGE = math.floor(combinedWidth / 2), 1
 
     for i = 1, dm.windowCount do
         local w = dm.windows[i] or {}
@@ -471,17 +472,6 @@ function CJ:ApplyEllesmereUITweaks(opts)
         return false
     end
 
-    -- TODO
-    -- --== EllesmereUI ==--
-    -- Damage and Healing Meters can be wider
-    -- Role Icons to be 'modern light'
-    --
-    -- --== EditMode ==--
-    -- Encounter bar ~10px above Action Bar 3. Not doable from here: EAB's
-    --   SetupBlizzardMovableFrames explicitly no-ops for EncounterBar ("let
-    --   Blizzard own position entirely"), so it has no barPositions entry and no
-    --   unlock key. Edit Mode is the only handle.
-
     local eab = AddonDB(profile, "EllesmereUIActionBars")
     if opts.eui.primaryActionBars then ConfigurePrimaryActionBars(profile) end
     if opts.eui.secondaryActionBars then
@@ -494,7 +484,9 @@ function CJ:ApplyEllesmereUITweaks(opts)
     ConfigureMinimap(profile)
     ConfigureClassColours(profile)
     --if opts.eui.unitFrames then ConfigureUnitFrames(profile) end
-    if opts.eui.damageMeters then ConfigureDamageMeters(profile, opts.bottomStripHeight) end
+    if opts.eui.damageMeters then
+        ConfigureDamageMeters(profile, opts.bottomStripHeight, opts.meterWidth)
+    end
     MatchSpecLayoutsToBase(profile)
 
     return true
