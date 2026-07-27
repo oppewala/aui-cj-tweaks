@@ -10,3 +10,4 @@
 embeds.xml
 Core.lua
 EllesmereUi.lua
+EditMode.lua

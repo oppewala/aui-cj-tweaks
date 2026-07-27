@@ -125,6 +125,8 @@ function CJ:ApplyTweaks()
         return
     end
 
+    CJ:ApplyEditModeTweaks()
+
     -- TODO
     -- Pop up message to move quest log in edit mode after applying tweaks
     -- Move falcon to top part of screen
@@ -133,5 +135,5 @@ function CJ:ApplyTweaks()
     -- ApplyWeakAurasTweaks(opts)
     -- ApplyOmniCDTweaks(opts)
 
-    -- ReloadUI()
+    ReloadUI()
 end

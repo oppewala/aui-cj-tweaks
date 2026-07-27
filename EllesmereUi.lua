@@ -399,8 +399,8 @@ function CJ:ApplyEllesmereUITweaks(opts)
     --   SetupBlizzardMovableFrames explicitly no-ops for EncounterBar ("let
     --   Blizzard own position entirely"), so it has no barPositions entry and no
     --   unlock key. Edit Mode is the only handle.
-    -- Move the quest log to the right side of the screen for Tank / DPS
-    -- Move buffs/debuffs to the right side of the screen (next to minimap) for Tank / DPS
+    -- Move the quest log to the right side of the screen
+    -- Move buffs/debuffs to the right side of the screen (next to minimap)
     -- Increase the height/width of the chat panel
 
     local eab = AddonDB(profile, "EllesmereUIActionBars")
