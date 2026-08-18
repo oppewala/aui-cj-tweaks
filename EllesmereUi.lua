@@ -53,6 +53,29 @@ local function SetAnchor(profile, key, target, side, offsetX, offsetY)
     end
 end
 
+-- A bar's own position, for the bars no anchor owns. Two stores again, but not
+-- the same two: the live copy is the module's barPositions, and a layer flush
+-- refills that from baselineLayout.abPos (MatchSpecLayoutsToBase carries it into
+-- the spec forks from there).
+--
+-- point/relPoint are applied verbatim by RestoreBarPositions, so a screen corner
+-- works even though EllesmereUI's own saved-edge format only ever uses
+-- LEFT/RIGHT/TOP/BOTTOM against CENTER. Side effect of being off that format:
+-- LayoutBar only re-points a bar whose relPoint is CENTER, so a corner-pointed
+-- frame keeps growing away from its corner on every resize -- which is what we
+-- want -- but the module's X/Y position sliders now read corner-relative.
+local function SetBarPos(profile, key, pos)
+    local eab = AddonDB(profile, "EllesmereUIActionBars")
+    eab.barPositions = eab.barPositions or {}
+    eab.barPositions[key] = DeepCopy(pos)
+
+    local base = Baseline(profile)
+    if base then
+        base.abPos = base.abPos or {}
+        base.abPos[key] = DeepCopy(pos)
+    end
+end
+
 -- Square buttons that fill the strip: rows of them plus the gaps between. The
 -- alternative -- stretching icons to hit the height -- is visible on every
 -- single button, so the height drives the button size instead.
@@ -135,8 +158,19 @@ local function ConfigurePrimaryActionBars(profile)
 end
 
 -- Left Cluster (left to right): Bar4, Bar5
---   EllesmereUI's ultrawide support places and sizes Bar4 itself now, so Bar5 is
---   cloned off it -- same grid, same button size -- and hung off its right edge.
+--   EllesmereUI's ultrawide support sizes Bar4 itself, so Bar5 is cloned off it
+--   -- same grid, same button size -- and hung off its right edge.
+--
+-- Bar4 owns the bottom-left end of the strip, so pin it to that screen CORNER.
+-- The imported position is CENTER-relative, which means every element of the
+-- strip shifts by half the resolution delta on a swap; the corner does not move.
+-- Bar5 rides along on its anchor.
+--
+-- x clears the chat window, which sits in the corner itself. Chat is owned by
+-- Blizzard's Edit Mode -- unlock mode shows it as a read-only overlay, so there
+-- is nothing to anchor to -- so this is a measured constant: retune it if the
+-- chat is ever resized.
+local BAR4_CORNER = { point = "BOTTOMLEFT", relPoint = "BOTTOMLEFT", x = 502, y = 1 }
 -- Right Cluster: Pet Bar (anchored to the left of the Damage Done window, ideally with 1 pixel padding)
 -- Height of the window the pet bar hangs off. The unlock layer's elems entry
 -- wins whenever it exists -- every flush pushes its w/h back through the
@@ -170,6 +204,7 @@ local function ConfigureSecondaryActionBars(profile)
         bar._savedBarAlpha = nil
     end
 
+    SetBarPos(profile, "Bar4", BAR4_CORNER)
     SetAnchor(profile, "Bar5", "Bar4", "RIGHT", PAD, 0)
 
     -- Pet bar rides the left edge of the Damage Done window, so the meters and the
@@ -237,6 +272,25 @@ local function ConfigureRaidFrames(profile)
     -- keeps its centred raid frames.
     erf.unlockPos = DeepCopy(RAID_TOPLEFT)
     SetElemPos(Baseline(profile), "RF_RaidFrames", RAID_TOPLEFT)
+end
+
+-- Minimap's TOPRIGHT 1px in from UIParent's, for the same reason as Bar4: the
+-- imported position is CENTER-relative, so a smaller screen drags the minimap off
+-- its corner -- and the Edit Mode aura offsets, which are derived from the
+-- minimap's size and this same 1px inset, drift with it. mapSize is a profile
+-- setting, so once the corner is fixed the whole top-right block is.
+--
+-- minimap.position is the live store (ApplyMinimap reads it on first activation
+-- and honours any point/relPoint pair); the layer copy is the baseline elems
+-- entry, which owns positioning from then on. EBS_Minimap is already base-matched
+-- into the spec forks.
+local MINIMAP_TOPRIGHT = { point = "TOPRIGHT", relPoint = "TOPRIGHT", x = -1, y = -1 }
+
+local function ConfigureMinimap(profile)
+    local ebs = AddonDB(profile, "EllesmereUIMinimap")
+    ebs.minimap = ebs.minimap or {}
+    ebs.minimap.position = DeepCopy(MINIMAP_TOPRIGHT)
+    SetElemPos(Baseline(profile), "EBS_Minimap", MINIMAP_TOPRIGHT)
 end
 
 -- Dark Mode is not one stored flag: each module keeps its own in its own shape
@@ -402,6 +456,9 @@ function CJ:ApplyEllesmereUITweaks(opts)
     if opts.eui.secondaryActionBars then ConfigureSecondaryActionBars(profile) end
     SyncGrowToBaseline(profile, eab)
     if opts.eui.raidFrames then ConfigureRaidFrames(profile) end
+    -- Before the Edit Mode pass in ApplyTweaks: the aura offsets are measured
+    -- against the corner this pins the minimap to.
+    -- ConfigureMinimap(profile)
     ConfigureClassColours(profile)
     MatchSpecLayoutsToBase(profile)
 

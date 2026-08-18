@@ -53,7 +53,7 @@ local options = {
                 },
                 secondaryActionBars = {
                     name = "Secondary Action Bars",
-                    desc = "Show Bar4/Bar5 always with Bar5 beside Bar4, and match the pet bar height to the Damage Done window.",
+                    desc = "Show Bar4/Bar5 always, pin Bar4 to the bottom-left screen corner with Bar5 beside it, and match the pet bar height to the Damage Done window.",
                     type = "toggle",
                     get = function() return CJ.db.global.eui.secondaryActionBars end,
                     set = function(_, val) CJ.db.global.eui.secondaryActionBars = val end
@@ -125,6 +125,10 @@ function CJ:ApplyTweaks()
     if not CJ:ApplyEllesmereUITweaks(opts) then
         return
     end
+
+    -- Blizzard-owned frames (buffs, debuffs, quest tracker): the Edit Mode
+    -- layout, not a profile.
+    CJ:ApplyEditModeTweaks()
 
     if opts.debug then
         CJ:Print("Debug mode: skipping the reload. /reload when you are done reading.")

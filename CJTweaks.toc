@@ -11,3 +11,4 @@ embeds.xml
 Core.lua
 AtrocityEssentials.lua
 EllesmereUi.lua
+EditMode.lua
