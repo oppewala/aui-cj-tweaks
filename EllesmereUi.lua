@@ -53,29 +53,6 @@ local function SetAnchor(profile, key, target, side, offsetX, offsetY)
     end
 end
 
--- A bar's own position, for the bars no anchor owns. Two stores again, but not
--- the same two: the live copy is the module's barPositions, and a layer flush
--- refills that from baselineLayout.abPos (MatchSpecLayoutsToBase carries it into
--- the spec forks from there).
---
--- point/relPoint are applied verbatim by RestoreBarPositions, so a screen corner
--- works even though EllesmereUI's own saved-edge format only ever uses
--- LEFT/RIGHT/TOP/BOTTOM against CENTER. Side effect of being off that format:
--- LayoutBar only re-points a bar whose relPoint is CENTER, so a corner-pointed
--- frame keeps growing away from its corner on every resize -- which is what we
--- want -- but the module's X/Y position sliders now read corner-relative.
-local function SetBarPos(profile, key, pos)
-    local eab = AddonDB(profile, "EllesmereUIActionBars")
-    eab.barPositions = eab.barPositions or {}
-    eab.barPositions[key] = DeepCopy(pos)
-
-    local base = Baseline(profile)
-    if base then
-        base.abPos = base.abPos or {}
-        base.abPos[key] = DeepCopy(pos)
-    end
-end
-
 -- Square buttons that fill the strip: rows of them plus the gaps between. The
 -- alternative -- stretching icons to hit the height -- is visible on every
 -- single button, so the height drives the button size instead.
@@ -161,17 +138,12 @@ end
 --   EllesmereUI's ultrawide support sizes Bar4 itself, so Bar5 is cloned off it
 --   -- same grid, same button size -- and hung off its right edge.
 --
--- Bar4 owns the bottom-left end of the strip, so pin it to that screen CORNER.
--- The imported position is CENTER-relative, which means every element of the
--- strip shifts by half the resolution delta on a swap; the corner does not move.
--- Bar5 rides along on its anchor.
---
--- x clears the chat window, which sits in the corner itself. Chat is owned by
--- Blizzard's Edit Mode -- unlock mode shows it as a read-only overlay, so there
--- is nothing to anchor to -- so this is a measured constant: retune it if the
--- chat is ever resized.
-local BAR4_CORNER = { point = "BOTTOMLEFT", relPoint = "BOTTOMLEFT", x = 502, y = 1 }
--- Right Cluster: Pet Bar (anchored to the left of the Damage Done window, ideally with 1 pixel padding)
+-- Bar4's own placement is atrocityUI's now: it anchors Bar4 to AES_ChatPanel,
+-- the chat panel atrocityEssentials registers as a real unlock element, and
+-- re-seeds that anchor once per revision (its Core.lua chat-anchor-seed). So
+-- the bottom-left end of the strip follows the chat at any resolution and the
+-- measured corner offset this used to carry is gone. Bar5 rides along.
+
 -- Height of the window the pet bar hangs off. The unlock layer's elems entry
 -- wins whenever it exists -- every flush pushes its w/h back through the
 -- window's setWidth/setHeight, overwriting dm.windows[i] -- so read that first
@@ -185,6 +157,19 @@ local function MeterHeight(profile, key, index)
     return win and win.height
 end
 
+-- Height of the panel Bar4 hangs off, so the left end of the strip lines up the
+-- same way the pet bar does against the meter. Read atrocityEssentials' live
+-- store rather than a second copy of the number: CJ:ApplyAtrocityEssentialsTweaks
+-- has already written it by the time this runs, and it stays right if the height
+-- is ever changed from AE's own options page instead.
+local function ChatHeight()
+    local AE = _G.atrocityEssentials
+    local chat = AE and AE.GetModule and AE:GetModule("Chat", true)
+    local db = chat and chat.db
+    if not (db and db.Enabled) then return nil end
+    return db.Height
+end
+
 local function ConfigureSecondaryActionBars(profile)
     local eab = AddonDB(profile, "EllesmereUIActionBars")
     eab.bars = eab.bars or {}
@@ -192,7 +177,16 @@ local function ConfigureSecondaryActionBars(profile)
     local bar4 = Bar(eab.bars, "Bar4")
     eab.bars.Bar5 = DeepCopy(bar4)
 
+    local chatH = ChatHeight()
+    if not chatH then
+        CJ:Print("No chat panel height available, leaving Bar4/Bar5 button sizes alone.")
+    end
+
     for _, bar in ipairs({ bar4, eab.bars.Bar5 }) do
+        -- Full 12 buttons. atrocityUI ships these two as 2x5 verticals, which
+        -- leaves two slots per bar unreachable; 2x6 is the same two columns.
+        bar.overrideNumIcons = 12
+
         -- Always visible. Mouseover mode parks mouseoverAlpha at 0 and stashes
         -- the real alpha in _savedBarAlpha, so clearing the mode alone would
         -- leave the bar shown but fully transparent -- undo the stash too
@@ -202,20 +196,23 @@ local function ConfigureSecondaryActionBars(profile)
         bar.mouseoverEnabled = false
         bar.mouseoverAlpha = bar._savedBarAlpha or 1
         bar._savedBarAlpha = nil
+
+        -- Vertical, so BarRows hands back the STRIDE -- 12 icons in the stored 2
+        -- columns is 6 rows, not 2.
+        if chatH then
+            local rows, icons = BarRows(bar, NUM_ACTIONBAR_BUTTONS or 12)
+            local btn, extra = MatchBarHeight(bar, chatH, rows)
+            CJ:Debug("Bar4/5: %d icons in %d rows, pad %.1f -> btn %.1f +%d spare px (chat %.1f tall)",
+                icons, rows, bar.buttonPadding or PAD, btn, extra, chatH)
+        end
     end
 
-    SetBarPos(profile, "Bar4", BAR4_CORNER)
     SetAnchor(profile, "Bar5", "Bar4", "RIGHT", PAD, 0)
 
-    -- Pet bar rides the left edge of the Damage Done window, so the meters and the
-    -- pet bar move as one strip off the bottom-right corner. Cross-module anchor:
-    -- if EllesmereUIDamageMeters is ever disabled this target goes missing and the
-    -- pet bar falls back to its stale barPositions entry.
-    SetAnchor(profile, "PetBar", "EDM_Win2", "LEFT", -PAD, 0)
-
-    -- ...and matches its height, so the two read as one block. No height stored
-    -- for the window means it has never been sized or dragged; leave the pet bar
-    -- alone rather than guessing.
+    -- The pet bar already rides the left edge of the Damage Done window in the
+    -- imported profile, so only its HEIGHT is ours: match the window's and the
+    -- two read as one block. No height stored for the window means it has never
+    -- been sized or dragged; leave the pet bar alone rather than guessing.
     local meterH = MeterHeight(profile, "EDM_Win2", 2)
     if not meterH then
         CJ:Print("No stored height for the Damage Done window, leaving the pet bar height alone.")
@@ -229,22 +226,7 @@ local function ConfigureSecondaryActionBars(profile)
         petIcons, petRows, pet.buttonPadding or PAD, petBtn, petExtra, meterH)
 end
 
--- Container's TOPLEFT 1px in from UIParent's. RF reads unlockPos through
--- _RFPosTopLeft, which honours any point/relPoint pair (its own first-install
--- default is LEFT/LEFT), so this needs no CENTER conversion. Neither growth is
--- LEFT or UP, so _RFGrowthCorner pins TOPLEFT and every size tier stays put.
-local RAID_TOPLEFT = { point = "TOPLEFT", relPoint = "TOPLEFT", x = 1, y = -1 }
-
--- Overwrite only the geometry of an existing layer entry; w/h stay whatever the
--- layer harvested. Missing key = the layer never carried this element, so leave
--- it missing (that reads as "follow baseline").
-local function SetElemPos(layer, key, pos)
-    local e = layer and layer.elems and layer.elems[key]
-    if not e then return end
-    e.point, e.relPoint, e.x, e.y = pos.point, pos.relPoint, pos.x, pos.y
-end
-
--- ...and the size, for the elements whose owning module does NOT get the last
+-- Size, for the elements whose owning module does NOT get the last
 -- word on it. An elems entry carries w/h alongside x/y, and the unlock layer
 -- pushes both back through the element's setWidth/setHeight on every flush --
 -- which for the damage meter windows overwrites dm.windows[i].width/height with
@@ -261,36 +243,15 @@ end
 
 -- Role icons for tanks and healers only. "Enabled" is expressed as any
 -- roleIconStyle other than "none".
+--
+-- Position is not ours any more: the imported profile already places the raid
+-- frames against UIParent's TOPLEFT, as it now does for the minimap and the
+-- meters, so a swap between aspect ratios keeps them on their corner.
 local function ConfigureRaidFrames(profile)
     local erf = AddonDB(profile, "EllesmereUIRaidFrames")
     -- "Modern Light" in the UI; the stored key stayed blizzLight for back-compat.
     erf.roleIconStyle = "blizzLight"
     erf.showRoleForDPS = false
-
-    -- unlockPos is the live store here. Writing the baseline too lets
-    -- MatchSpecLayoutsToBase push the position into the non-healer forks; healer
-    -- keeps its centred raid frames.
-    erf.unlockPos = DeepCopy(RAID_TOPLEFT)
-    SetElemPos(Baseline(profile), "RF_RaidFrames", RAID_TOPLEFT)
-end
-
--- Minimap's TOPRIGHT 1px in from UIParent's, for the same reason as Bar4: the
--- imported position is CENTER-relative, so a smaller screen drags the minimap off
--- its corner -- and the Edit Mode aura offsets, which are derived from the
--- minimap's size and this same 1px inset, drift with it. mapSize is a profile
--- setting, so once the corner is fixed the whole top-right block is.
---
--- minimap.position is the live store (ApplyMinimap reads it on first activation
--- and honours any point/relPoint pair); the layer copy is the baseline elems
--- entry, which owns positioning from then on. EBS_Minimap is already base-matched
--- into the spec forks.
-local MINIMAP_TOPRIGHT = { point = "TOPRIGHT", relPoint = "TOPRIGHT", x = -1, y = -1 }
-
-local function ConfigureMinimap(profile)
-    local ebs = AddonDB(profile, "EllesmereUIMinimap")
-    ebs.minimap = ebs.minimap or {}
-    ebs.minimap.position = DeepCopy(MINIMAP_TOPRIGHT)
-    SetElemPos(Baseline(profile), "EBS_Minimap", MINIMAP_TOPRIGHT)
 end
 
 -- Dark Mode is not one stored flag: each module keeps its own in its own shape
@@ -332,6 +293,10 @@ local METER_WIDTH, METER_HEIGHT = 250, 263
 
 -- windows is a plain array indexed 1..windowCount -- no profile to apply/save
 -- around the edit.
+--
+-- Only the SIZE is ours now. The imported profile pins Healing Done to
+-- UIParent's BOTTOMRIGHT and hangs Damage Done off its left edge, which is what
+-- the hand-written corner position and EDM_Win2 anchor used to do here.
 local function ConfigureDamageMeters(profile)
     local edm = AddonDB(profile, "EllesmereUIDamageMeters")
     edm.dm = edm.dm or {}
@@ -342,8 +307,6 @@ local function ConfigureDamageMeters(profile)
     dm.windows = dm.windows or {}
 
     -- Window 1 is Healing Done (curDMType 2), window 2 is Damage Done (curDMType 0).
-    local EDGE = 1
-
     for i = 1, dm.windowCount do
         local w = dm.windows[i] or {}
         w.width = METER_WIDTH
@@ -352,15 +315,6 @@ local function ConfigureDamageMeters(profile)
         w.hideTimer = true
         dm.windows[i] = w
     end
-
-    -- Healing Done is the only fixed window: hard into the bottom-right corner.
-    dm.windows[1].position =
-        { point = "BOTTOMRIGHT", relPoint = "BOTTOMRIGHT", x = -EDGE, y = EDGE }
-
-    -- Damage Done hangs off its left edge. Its own position is inert once anchored,
-    -- but zero it so a stale coordinate can't show through if the anchor is dropped.
-    dm.windows[2].position = { point = "CENTER", relPoint = "CENTER", x = 0, y = 0 }
-    SetAnchor(profile, "EDM_Win2", "EDM_Win1", "LEFT")
 
     -- The size above is only half the job -- the unlock layer holds its own copy
     -- and wins. MatchSpecLayoutsToBase carries both keys into the spec forks.
@@ -385,9 +339,6 @@ local BASE_MATCHED_KEYS = {
     -- copy would quietly keep a stale arrangement on that spec.
     "MainBar", "Bar2", "Bar3", "Bar4", "Bar5",
 }
--- Healer deliberately centres its raid/party frames over the action bars; every
--- other group wants the base profile's top-left placement.
-local BASE_MATCHED_KEYS_NON_HEALER = { "RF_RaidFrames", "RF_PartyFrames" }
 
 local function CopyLayoutKey(src, dst, store, key)
     local v = src[store] and src[store][key]
@@ -408,24 +359,19 @@ local function MatchKeys(base, layer, keys)
     end
 end
 
--- The healer group is matched on its role icon, not its name: the name is
--- user-editable, the icon is picked from a fixed set.
-local function HealerGroupId(profile)
-    for _, g in ipairs(profile.specOverrideGroups or {}) do
-        if g.icon and g.icon.kind == "role" and g.icon.key == "HEALER" then return g.id end
-    end
-end
-
 -- Self-skips when the profile has no forks.
+--
+-- The raid/party frames used to be forced back to base on every non-healer
+-- fork. Gone with the fork count: the profile now carries one layout override
+-- (Healer Mode), which is the one group that deliberately keeps its own centred
+-- raid frames -- so there is nothing left to force.
 local function MatchSpecLayoutsToBase(profile)
     local store = profile.specUnlockOverrides
     local base = Baseline(profile)
     if not base or not store.layouts then return end
 
-    local healer = HealerGroupId(profile)
-    for gid, layer in pairs(store.layouts) do
+    for _, layer in pairs(store.layouts) do
         MatchKeys(base, layer, BASE_MATCHED_KEYS)
-        if gid ~= healer then MatchKeys(base, layer, BASE_MATCHED_KEYS_NON_HEALER) end
     end
 
     -- We just rewrote the layer store from outside EllesmereUI, but LIVE still
@@ -456,9 +402,6 @@ function CJ:ApplyEllesmereUITweaks(opts)
     if opts.eui.secondaryActionBars then ConfigureSecondaryActionBars(profile) end
     SyncGrowToBaseline(profile, eab)
     if opts.eui.raidFrames then ConfigureRaidFrames(profile) end
-    -- Before the Edit Mode pass in ApplyTweaks: the aura offsets are measured
-    -- against the corner this pins the minimap to.
-    -- ConfigureMinimap(profile)
     ConfigureClassColours(profile)
     MatchSpecLayoutsToBase(profile)
 
