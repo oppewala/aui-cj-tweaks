@@ -1,13 +1,13 @@
 ## Author: CrackedJar
 ## Interface: 120000, 120001, 120002
-## Notes: Customize AtrocityUI for Cracked Jar. Based on ZoxeTweaks.
+## Notes: Customize EllesmereUI for Cracked Jar. Based on ZoxeTweaks.
 ## Title: CrackedJarTweaks
-## Version: 2.0.0
+## Version: 3.0.0
 ## DefaultState: enabled
-## OptionalDeps: atrocityUI, atrocityMedia, Details, ElvUI, BetterCooldownManager
+## OptionalDeps: EllesmereUI, EllesmereUIActionBars, EllesmereUIUnitFrames, EllesmereUIRaidFrames, EllesmereUIDamageMeters
 ## SavedVariables: CrackedJarTweaksDB
 
 embeds.xml
 Core.lua
-Atrocity.lua
-ElvUI.lua
+AtrocityEssentials.lua
+EllesmereUi.lua

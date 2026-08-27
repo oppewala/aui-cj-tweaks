@@ -6,90 +6,93 @@ local AceConfigCmd = LibStub("AceConfigCmd-3.0")
 
 _G["CrackedJarTweaks"] = CJ
 
-local optionsFrame
-function CJ:OnInitialize()
-    local sw = GetScreenWidth() * UIParent:GetEffectiveScale()
-    local sh = GetScreenHeight() * UIParent:GetEffectiveScale()
-    local aspectRatio = sw / sh
-    local defaults = {
-        global = {
-            profiles = {
-                atrocityUI = "atrocityUI",
-                atrocityUIColor = "atrocityUI [C]",
-                atrocityUIHealer = "atrocityUI Healer",
-                atrocityUIHealerColor = "atrocityUI Healer [C]"
-            },
-            elvUi = {
-                disableBags = true,
-                primaryActionBars = true,
-                secondaryActionBars = true,
-                panels = true,
-                -- If aspect ratio is greater than 2.3, assume ultrawide, else standard. Set to true by default for ultrawide.
-                unitFrames = (aspectRatio > 2.3)
-            }
+-- The damage meter block: two windows side by side with a one pixel seam.
+-- Both the EllesmereUI window sizes and the atrocityEssentials panels that
+-- flank them are cut from these, so nothing can drift out of step again.
+CJ.METER_WIDTH, CJ.METER_HEIGHT, CJ.METER_SEAM = 250, 263, 1
+
+local defaults = {
+    global = {
+        euiProfile = "atrocityUI",
+        eui = {
+            primaryActionBars = true,
+            secondaryActionBars = true,
+            raidFrames = true,
+            damageMeters = true
         },
-        profile = {
-        }
+        debug = false
     }
+}
 
-    self.db = LibStub("AceDB-3.0"):New("CrackedJarTweaksDB", defaults)
-
-    local options = {
-        name = "CrackedJarTweaks",
-        handler = CJ,
-        type = "group",
-        args = {
-            apply = {
-                order = 1000,
-                name = "Apply Tweaks",
-                desc = "Use this button to apply any the tweaks you have enabled.",
-                type = "execute",
-                func = function () return CJ:ApplyTweaks() end
-            },
-            elvUi = {
-                order = 1,
-                name = "ElvUI Tweaks",
-                type = "group",
-                args = {
-                    primaryActionBars = {
-                        name = "Primary Action Bars",
-                        desc = "Show primary action bars and move them to the center bottom of the screen.",
-                        type = "toggle",
-                        get = function() return self.db.global.elvUi.primaryActionBars end,
-                        set = function(_, val) self.db.global.elvUi.primaryActionBars = val end
-                    },
-                    secondaryActionBars = {
-                        name = "Secondary Action Bars",
-                        desc = "Show secondary action bars and move them to the bottom left of the screen.",
-                        type = "toggle",
-                        get = function() return self.db.global.elvUi.secondaryActionBars end,
-                        set = function(_, val) self.db.global.elvUi.secondaryActionBars = val end
-                    },
-                    panels = {
-                        name = "Panels",
-                        desc = "Increase the size of the left and right panels.",
-                        type = "toggle",
-                        get = function() return self.db.global.elvUi.panels end,
-                        set = function(_, val) self.db.global.elvUi.panels = val end
-                    },
-                    disableBags = {
-                        name = "Disable Bags",
-                        desc = "Disable ElvUI bag management so you can use another bag addon.",
-                        type = "toggle",
-                        get = function() return self.db.global.elvUi.disableBags end,
-                        set = function(_, val) self.db.global.elvUi.disableBags = val end
-                    },
-                    unitFrames = {
-                        name = "Unit Frames",
-                        desc = "Tweak unit frames positions for ultrawide displays.",
-                        type = "toggle",
-                        get = function() return self.db.global.elvUi.unitFrames end,
-                        set = function(_, val) self.db.global.elvUi.unitFrames = val end
-                    }
+local options = {
+    name = "CrackedJarTweaks",
+    handler = CJ,
+    type = "group",
+    args = {
+        apply = {
+            order = 1000,
+            name = "Apply Tweaks",
+            desc = "Use this button to apply any the tweaks you have enabled.",
+            type = "execute",
+            func = function() return CJ:ApplyTweaks() end
+        },
+        eui = {
+            order = 1,
+            name = "EllesmereUI Tweaks",
+            type = "group",
+            args = {
+                euiProfile = {
+                    order = 0,
+                    name = "Profile",
+                    desc = "The EllesmereUI profile to write tweaks into.",
+                    type = "input",
+                    get = function() return CJ.db.global.euiProfile end,
+                    set = function(_, val) CJ.db.global.euiProfile = val end
+                },
+                primaryActionBars = {
+                    name = "Primary Action Bars",
+                    desc = "Stack Bar2 and Bar3 above the main bar, matching its settings.",
+                    type = "toggle",
+                    get = function() return CJ.db.global.eui.primaryActionBars end,
+                    set = function(_, val) CJ.db.global.eui.primaryActionBars = val end
+                },
+                secondaryActionBars = {
+                    name = "Secondary Action Bars",
+                    desc = "Show Bar4/Bar5 always, put Bar5 beside Bar4, and match the pet bar height to the Damage Done window.",
+                    type = "toggle",
+                    get = function() return CJ.db.global.eui.secondaryActionBars end,
+                    set = function(_, val) CJ.db.global.eui.secondaryActionBars = val end
+                },
+                raidFrames = {
+                    name = "Raid Frames",
+                    desc = "Show role icons for tanks and healers only.",
+                    type = "toggle",
+                    get = function() return CJ.db.global.eui.raidFrames end,
+                    set = function(_, val) CJ.db.global.eui.raidFrames = val end
+                },
+                damageMeters = {
+                    name = "Damage Meters",
+                    desc = "Size the damage meter windows.",
+                    type = "toggle",
+                    get = function() return CJ.db.global.eui.damageMeters end,
+                    set = function(_, val) CJ.db.global.eui.damageMeters = val end
                 }
             }
+        },
+        debug = {
+            order = 999,
+            name = "Debug",
+            desc = "Print the geometry each apply works out, and skip the reload at the end so the numbers stay on screen.",
+            type = "toggle",
+            get = function() return CJ.db.global.debug end,
+            set = function(_, val) CJ.db.global.debug = val end
         }
     }
+}
+
+local optionsFrame
+function CJ:OnInitialize()
+    self.db = LibStub("AceDB-3.0"):New("CrackedJarTweaksDB", defaults)
 
     AceConfig:RegisterOptionsTable("CrackedJarTweaks", options)
     optionsFrame = AceConfigDialog:AddToBlizOptions("CrackedJarTweaks", "CrackedJarTweaks")
@@ -97,10 +100,12 @@ function CJ:OnInitialize()
     self:RegisterChatCommand("cj", "ChatCommand")
 end
 
-function CJ:OnEnable()
-end
-
-function CJ:OnDisable()
+-- Geometry the layout math worked out, for hand-tuning the numbers against. Off
+-- by default: these fire several times per apply, which is a lot of chat for
+-- something only useful while tuning.
+function CJ:Debug(fmt, ...)
+    if not self.db.global.debug then return end
+    self:Print(fmt:format(...))
 end
 
 function CJ:ChatCommand(input)
@@ -113,23 +118,25 @@ function CJ:ChatCommand(input)
         CJ:ApplyTweaks()
         return
     end
-    
+
     AceConfigCmd.HandleCommand(CJ, "cj", "CrackedJarTweaks", input)
 end
 
 function CJ:ApplyTweaks()
     local opts = self.db.global
 
-    CJ:ApplyElvUITweaks(opts)
-    CJ:ApplyDetailsTweaks(opts)
+    CJ:ApplyAtrocityEssentialsTweaks()
 
-    -- TODO
-    -- Pop up message to move quest log in edit mode after applying tweaks
-    -- Move falcon to top part of screen
-    -- Better Cooldown Manager - Add and move Additional Custom for additional tracked auras
+    if not CJ:ApplyEllesmereUITweaks(opts) then
+        return
+    end
 
-    -- ApplyWeakAurasTweaks(opts)
-    -- ApplyOmniCDTweaks(opts)
+    if opts.debug then
+        CJ:Print("Debug mode: skipping the reload. /reload when you are done reading.")
+        return
+    end
 
+    -- The meter and action bar modules read their profile at login, so the
+    -- writes above are invisible until this runs.
     ReloadUI()
 end
