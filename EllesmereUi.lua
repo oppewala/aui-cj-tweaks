@@ -289,7 +289,7 @@ local function ConfigureClassColours(profile)
     erf._darkPrevHealthColorMode, erf._darkPrevPartyHealthColorMode = nil, nil
 end
 
-local METER_WIDTH, METER_HEIGHT = 250, 263
+local METER_WIDTH, METER_HEIGHT = CJ.METER_WIDTH, CJ.METER_HEIGHT
 
 -- windows is a plain array indexed 1..windowCount -- no profile to apply/save
 -- around the edit.
@@ -383,6 +383,31 @@ local function MatchSpecLayoutsToBase(profile)
     profile._importEstablishPending = true
 end
 
+-- Quickdraw palette 1: the eight raid target markers, then /tm 0 (clear) in the
+-- ninth slot. Only palette 1 is ours -- anything the user adds beyond it stays.
+--
+-- The ring's own key is NOT a profile key: EUI_RADIAL1 is a Blizzard binding
+-- (EllesmereUIQuickdraw/Bindings.xml), so it has to be set and saved through
+-- the binding API, and saved before ApplyTweaks reloads out from under it.
+local function ConfigureQuickdraw(profile)
+    local qd = AddonDB(profile, "EllesmereUIQuickdraw")
+    qd.enabled = true
+
+    local slots = {}
+    for i = 1, 8 do slots[i] = { kind = "raidtarget", id = i } end
+    slots[9] = { kind = "raidtarget", id = 0 }
+
+    qd.palettes = qd.palettes or {}
+    qd.palettes[1] = { name = "Target Markers", slots = slots }
+
+    if InCombatLockdown() then
+        CJ:Print("In combat: leaving the ALT-R binding alone.")
+        return
+    end
+    SetBinding("ALT-R", "EUI_RADIAL1")
+    SaveBindings(GetCurrentBindingSet())
+end
+
 function CJ:ApplyEllesmereUITweaks(opts)
     if type(EllesmereUIDB) ~= "table" or type(EllesmereUIDB.profiles) ~= "table" then
         CJ:Print("EllesmereUI not loaded, skipping its tweaks.")
@@ -403,6 +428,7 @@ function CJ:ApplyEllesmereUITweaks(opts)
     SyncGrowToBaseline(profile, eab)
     if opts.eui.raidFrames then ConfigureRaidFrames(profile) end
     ConfigureClassColours(profile)
+    ConfigureQuickdraw(profile)
     MatchSpecLayoutsToBase(profile)
 
     return true

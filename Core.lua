@@ -6,6 +6,11 @@ local AceConfigCmd = LibStub("AceConfigCmd-3.0")
 
 _G["CrackedJarTweaks"] = CJ
 
+-- The damage meter block: two windows side by side with a one pixel seam.
+-- Both the EllesmereUI window sizes and the atrocityEssentials panels that
+-- flank them are cut from these, so nothing can drift out of step again.
+CJ.METER_WIDTH, CJ.METER_HEIGHT, CJ.METER_SEAM = 250, 263, 1
+
 local defaults = {
     global = {
         euiProfile = "atrocityUI",
